@@ -1,0 +1,14 @@
+bedziemy uzywac wzorcow projekotwych :
+- Struktura gry:
+    = MVC - rozdzielenie logiki gry od widoku i sterowania
+      model - do logiki
+      view - do interfejsu uzytkownika
+      controler - do logiki sterowania
+    = observer - do aktualizacji zmiany widoku po kadej zmianie stanu : ruchu pionka i zmianie widoku
+    = command - reprezentacja ruchow szachowych jako obiektow , co daje mozliwosc latwego cofania
+- komunikacja i wielowatkowosc:
+    = Proxy - do komunikacji , klient server
+    = singleton - server bedzie globalnym obiektem zarzadzajacy akzda partia
+    = Abstract factory - tworzenie nowych aprtii i zarzadanie typu nw ip czy cos
+    = factory do tworenia figur
+    = Thread pool - wielowatkowosc np zegar

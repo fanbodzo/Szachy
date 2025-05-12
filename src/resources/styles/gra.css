@@ -1,0 +1,28 @@
+/* src/main/resources/styles/gra.css */
+
+#tlo {
+    -fx-background-color: #404040;
+}
+
+
+#lewo, #prawo, #gora, #dol {
+    -fx-background-color: #606060;
+}
+
+
+#szachownica {
+    -fx-border-color: black;
+    -fx-border-width: 2px;
+    -fx-padding: 5px;
+}
+
+
+/*.label-figury-czarne {*/
+/*    -fx-font-weight: bold;*/
+/*    -fx-text-fill: #ff8484;*/
+/*}*/
+
+/*.label-figury-biale {*/
+/*    -fx-font-weight: bold;*/
+/*    -fx-text-fill: #6e81ea;*/
+/*}*/

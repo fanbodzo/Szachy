@@ -25,6 +25,8 @@ public class Main extends Application {
         //Scene scene = new Scene(gridPane);
 
         Scene scene = new Scene(rootLayout);
+        //ladownie pliku css
+        scene.getStylesheets().add(getClass().getResource("resources/styles/gra.css").toExternalForm());
         primaryStage.setTitle("Szachy");
         primaryStage.setScene(scene);
         primaryStage.show();

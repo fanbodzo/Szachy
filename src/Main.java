@@ -1,4 +1,5 @@
 import javafx.fxml.Initializable;
+import javafx.scene.layout.BorderPane;
 import model.rdzen.Plansza;
 
 import javafx.application.Application;
@@ -15,12 +16,16 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         // ladowanie fxml
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("resources/szachownicaView.fxml"));
-        GridPane gridPane = loader.load();
+        //FXMLLoader loader = new FXMLLoader(getClass().getResource("resources/szachownicaView.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("resources/graView.fxml"));
+        //GridPane gridPane = loader.load();
+        BorderPane rootLayout = loader.load();
 
         // twrozenie sceny , trzeba bedzie to dac do osbnej klasy do handlowania tego jak bedziuemy zmieniac sceny
-        Scene scene = new Scene(gridPane);
-        primaryStage.setTitle("Szachownica");
+        //Scene scene = new Scene(gridPane);
+
+        Scene scene = new Scene(rootLayout);
+        primaryStage.setTitle("Szachy");
         primaryStage.setScene(scene);
         primaryStage.show();
     }

@@ -4,6 +4,7 @@ package view.controlers;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -21,16 +22,26 @@ import utils.Pozycja;
 
 import java.net.URL;
 import java.util.ResourceBundle;
-/*
-       WERSJA KODU KTORA WYSIWETLA TYLKO SZACHOWNICE , DO TESTOWANIA , TA SAMA SZACHOWNICA ZNAJDUJE SIE W graView KTORY
-       OBSLUGIWAC MA ROZGRYWKE I TAM DODAJEMY RZECZY
- */
-public class SzachownicaControlerView implements Initializable {
-    //tutaj dodac kontole pliku fxml
+
+public class GraViewController implements Initializable {
+    //caly byt borderPane
+    @FXML
+    private BorderPane tlo;
+
+    //centralne okno , szachownica
     @FXML
     private GridPane szachownica;
 
-    //referencja do pol na planszy zeby bylo latwiej
+    //panele wokol
+    @FXML
+    private Pane lewo;
+    @FXML
+    private Pane prawo;
+    @FXML
+    private Pane gora;
+    @FXML
+    private Pane dol;
+
     private StackPane[][] polaSzachownicy = new StackPane[8][8];
 
     @Override

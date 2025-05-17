@@ -1,6 +1,7 @@
 package view.controlers;
 
 
+import gui.Nawigator;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -20,6 +21,7 @@ import utils.KolorToCSS;
 import javafx.scene.control.Label;
 import utils.Pozycja;
 
+import javax.print.attribute.standard.MediaSize;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -42,6 +44,7 @@ public class GraViewController implements Initializable {
     @FXML
     private Pane dol;
 
+    private Nawigator nawigator;
     private StackPane[][] polaSzachownicy = new StackPane[8][8];
 
     @Override

@@ -1,5 +1,34 @@
 /* src/main/resources/styles/gra.css */
 
+/* sekcja od okna loginView */
+#bg{
+    -fx-background-color: #123123;
+}
+
+#password{
+    -fx-background-color: #878787;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+}
+#loginButton{
+    -fx-background-color: #007e0e;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+    -fx-border-color: #000000;
+    -fx-border-width: 2;
+}
+#loginButton:pressed{
+    -fx-background-color: #321321;
+    -fx-text-fill: #ffffff;
+}
+
+#username{
+    -fx-background-color: #878787;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+}
+
+/* sekcja od okna graView */
 #tlo {
     -fx-background-color: #404040;
 }

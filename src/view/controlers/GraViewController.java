@@ -1,6 +1,7 @@
 package view.controlers;
 
 
+import gui.KontrolerNawigator;
 import gui.Nawigator;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
@@ -16,6 +17,7 @@ import model.enums.KolorFigur;
 import model.enums.TypFigury;
 import model.fabryka.FabrykaFigur;
 import model.figury.Figura;
+import model.figury.Kon;
 import utils.KolorToCSS;
 
 import javafx.scene.control.Label;
@@ -25,7 +27,7 @@ import javax.print.attribute.standard.MediaSize;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class GraViewController implements Initializable {
+public class GraViewController implements Initializable , KontrolerNawigator {
     //caly byt borderPane
     @FXML
     private BorderPane tlo;
@@ -46,6 +48,10 @@ public class GraViewController implements Initializable {
 
     private Nawigator nawigator;
     private StackPane[][] polaSzachownicy = new StackPane[8][8];
+
+    public void setNawigator(Nawigator nawigator) {
+        this.nawigator = nawigator;
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {

@@ -1,5 +1,5 @@
 /* src/main/resources/styles/gra.css */
-
+/* nazwy po "#" musza byc nazwami elementow z plikow .fxml"*/
 /* sekcja od okna loginView */
 #bg{
     -fx-background-color: #123123;

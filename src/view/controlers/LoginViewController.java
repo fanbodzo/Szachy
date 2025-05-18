@@ -40,11 +40,8 @@ public class LoginViewController implements Initializable , KontrolerNawigator {
         loginButton.setOnMouseClicked(event -> {
             //pozniej dodac w nawigatorze kolejna dana jaka obiekt zeby user byl obiektem
             // uwzam ze to moze byc przydatne przekazanie usera np do wyswietlania kto z kim gra
-            this.nawigator.nawigujDo(ViewManager.GRA);
+            this.nawigator.nawigujDo(ViewManager.STRONA_GLOWNA);
 
         });
-
-
-
     }
 }

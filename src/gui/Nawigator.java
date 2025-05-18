@@ -8,11 +8,9 @@ import view.controlers.LoginViewController;
 
 import java.io.IOException;
 
-import static gui.ViewManager.LOGIN;
 
 public class Nawigator {
     private final Stage stage;
-    private final String globalCssPath = "/styles/gra.css";
     private final String cssUrl = "/resources/styles/gra.css";
 
     public Nawigator(Stage stage) {
@@ -25,8 +23,8 @@ public class Nawigator {
             Parent root = loader.load();
 
             T controller = loader.getController();
-            if (controller instanceof LoginViewController) {
-                ((LoginViewController) controller).setNawigator(this);
+            if (controller instanceof KontrolerNawigator) {
+                ((KontrolerNawigator) controller).setNawigator(this);
                 // przekazywanie this zeby moc wstrzykac nawitagora w innych klasach
             }
 
@@ -53,14 +51,18 @@ public class Nawigator {
 
     }
 
+
+    //to mozna zamienic w enum zeby dac po przecinku druga wartosc jako nazwe okna i nie zasmiecac tak kodu
     public String nazwaOkna(ViewManager viewManager) {
         switch (viewManager) {
             case LOGIN:
                 return "Logowanie - Szachy";
             case GRA:
                 return "Gra - Szachy";
+            case STRONA_GLOWNA:
+                return "Strona Glowna - Szachy";
             default:
-                return "szachy";
+                return "Szachy";
         }
     }
 }

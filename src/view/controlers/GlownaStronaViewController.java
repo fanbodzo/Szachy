@@ -32,4 +32,5 @@ public class GlownaStronaViewController implements Initializable , KontrolerNawi
             this.nawigator.nawigujDo(ViewManager.GRA);
         });
     }
+    //trzeba bedzie dodac w zakladce konto dane konta z ktorego sie zalogowalismy
 }

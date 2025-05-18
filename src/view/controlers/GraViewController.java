@@ -3,9 +3,11 @@ package view.controlers;
 
 import gui.KontrolerNawigator;
 import gui.Nawigator;
+import gui.ViewManager;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -45,6 +47,7 @@ public class GraViewController implements Initializable , KontrolerNawigator {
     private Pane gora;
     @FXML
     private Pane dol;
+    @FXML private Button cofnijButton;
 
     private Nawigator nawigator;
     private StackPane[][] polaSzachownicy = new StackPane[8][8];
@@ -104,6 +107,10 @@ public class GraViewController implements Initializable , KontrolerNawigator {
                 });
             }
         }
+        //przeniesc to do osobenj metody narazie zostaje jako test tutaj
+        cofnijButton.setOnAction(e -> {
+           this.nawigator.nawigujDo(ViewManager.STRONA_GLOWNA);
+        });
     }
 
     //w wersji pelnej tutaj beda jeszcze zdjecia figur , narazie skrot figury bedzie wysiweltany

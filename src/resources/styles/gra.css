@@ -27,10 +27,41 @@
     -fx-text-fill: #000000;
     -fx-font-weight: bold;
 }
+/* sekcja od okna glownaStronaView */
+#bg{
+    -fx-background-color: #123123;
+}
+#grajButton{
+    -fx-background-color: #007e0e;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+    -fx-border-color: #bfbfbf;
+    -fx-border-width: 2;
+}
+#grajButton:pressed{
+    -fx-background-color: #321321;
+    -fx-text-fill: #ffffff;
+}
+
 
 /* sekcja od okna graView */
 #tlo {
     -fx-background-color: #404040;
+}
+
+/*moze byc problem jak wieksozc buttonow beidze nazywalo sie cofnij bo kazdy bedzie miec ten sam styl
+ale to git chyba
+ */
+#cofnijButton{
+    -fx-background-color: #4e4e4e;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+    -fx-border-color: #8f8f8f;
+    -fx-border-width: 2;
+}
+#cofnijButton:pressed{
+    -fx-background-color: #321321;
+    -fx-text-fill: #ffffff;
 }
 
 

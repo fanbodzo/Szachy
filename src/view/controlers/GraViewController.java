@@ -70,7 +70,7 @@ public class GraViewController implements Initializable , KontrolerNawigator {
             for(int j=0 ; j<8 ; j++){
                 StackPane kwadrat = new StackPane();
 
-                kwadrat.setPrefSize(60,60);
+                kwadrat.setPrefSize(75,75);
                 Color currentcolor = ((i+j)%2 == 0)? Color.WHITE : Color.DARKSLATEGREY;
                 final String originalStyle = "-fx-background-color: " + KolorToCSS.toWebColor(currentcolor) + ";";
 

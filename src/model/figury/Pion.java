@@ -1,11 +1,12 @@
 package model.figury;
 
 import model.enums.KolorFigur;
+import model.enums.TypFigury;
 
 public class Pion extends Figura {
 
     public Pion(KolorFigur kolor) {
-        super(kolor);
+        super(kolor, TypFigury.PION);
     }
     @Override
     public String getSymbol(){

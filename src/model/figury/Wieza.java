@@ -1,10 +1,11 @@
 package model.figury;
 
 import model.enums.KolorFigur;
+import model.enums.TypFigury;
 
 public class Wieza extends Figura{
     public Wieza(KolorFigur kolor) {
-        super(kolor);
+        super(kolor, TypFigury.WIEZA);
     }
     @Override
     public String getSymbol(){

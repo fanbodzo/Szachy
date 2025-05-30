@@ -1,17 +1,21 @@
 package model.figury;
 
 import model.enums.KolorFigur;
+import model.enums.TypFigury;
 import utils.*;
 
 import java.util.List;
 
-public class Figura {
+public abstract class Figura {
     protected KolorFigur kolorFigur;
     //aktualna pozycja figury zarzadzana przez plansze
     protected Pozycja pozycja;
+    //zeby wiedziec jaki to typ figury do obslugi ruchow  na peno si eprzyda
+    protected TypFigury typFigury;
 
-    public Figura(KolorFigur kolorFigur) {
+    public Figura(KolorFigur kolorFigur, TypFigury typ) {
         this.kolorFigur = kolorFigur;
+        this.typFigury = typ;
     }
     public KolorFigur getKolorFigur() {
         return kolorFigur;
@@ -29,6 +33,10 @@ public class Figura {
     // repreznatacja np BP - bialy pionek BH- bialy Hetman
     public String getSymbol() {
         return null;
+    }
+
+    public TypFigury getTypFigury() {
+        return typFigury;
     }
 
     @Override

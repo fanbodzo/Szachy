@@ -1,10 +1,11 @@
 package model.figury;
 
 import model.enums.KolorFigur;
+import model.enums.TypFigury;
 
 public class Hetman extends Figura{
     public Hetman(KolorFigur kolor) {
-        super(kolor);
+        super(kolor, TypFigury.HETMAN);
     }
     @Override
     public String getSymbol(){

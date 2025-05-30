@@ -57,6 +57,7 @@ public class GraViewController implements Initializable , KontrolerNawigator {
     //tablica ktora przechowuje obiekt pole z indkesmi odpowiadjacami szachownicy
     //nmo czyli kolor figury typ itd i jakie pole
     private Figura[][] figuryNaPolachLogic = new Figura[8][8];
+    private String[][] oryginalneStylePol = new String[8][8];
 
     public void setNawigator(Nawigator nawigator) {
         this.nawigator = nawigator;
@@ -82,6 +83,7 @@ public class GraViewController implements Initializable , KontrolerNawigator {
 
                 //uzycie metody statycznie na zamiane koloru na css bo inaczje nie dziala klasa: KolorToCSS  w utils
                 kwadrat.setStyle(originalStyle);
+                oryginalneStylePol[i][j] = originalStyle;
 
                 szachownica.add(kwadrat,j,i);
                 polaSzachownicy[i][j] = kwadrat;
@@ -91,21 +93,8 @@ public class GraViewController implements Initializable , KontrolerNawigator {
                 final int kolumna =  j;
                 PauseTransition pause = new PauseTransition(Duration.millis(1000));
                 kwadrat.setOnMouseClicked(event -> {
+                    //podswietlnie przeniesone do osbnych metod
 
-                    //to tak dla zabwy zeby zoabczyc jak to dziala , moze sie przydac jak bedizemy klikac na figure
-                    // ibedzie pokazywac jakie sa dostepne ruchy dla figury
-                    final String highlightedStyle = String.format(
-                            "-fx-background-color: %s; -fx-border-color: %s; -fx-border-width: 3px;",
-                            KolorToCSS.toWebColor(currentcolor),
-                            KolorToCSS.toWebColor(Color.INDIANRED)
-                    );
-
-                    System.out.println("Kliknięto pole: [" + rzad + ", " + kolumna + "]");
-                    kwadrat.setStyle(highlightedStyle);
-                    pause.play();
-                    pause.setOnFinished(e ->{
-                        kwadrat.setStyle(originalStyle);
-                    });
                     kliknieciePola(rzad,kolumna);
 
                 });
@@ -176,6 +165,11 @@ public class GraViewController implements Initializable , KontrolerNawigator {
         Pozycja kliknietePole = new Pozycja(row,col);
         System.out.println(kliknietePole);
 
+        //zdejmnowanie zazanczenia
+        if (pozycjaZaznaczonejFigury != null) {
+            przywrocStylPola(pozycjaZaznaczonejFigury);
+        }
+
         if(aktualnieZaznaczonaFigura == null){
             Figura figuraKliknieta = figuryNaPolachLogic[row][col];
             if(figuraKliknieta != null){
@@ -183,6 +177,7 @@ public class GraViewController implements Initializable , KontrolerNawigator {
                 pozycjaZaznaczonejFigury = kliknietePole;
                 //info co sie dzieje bedzie mozna wykorzystac pozniej do pisania logow
                 System.out.println("Zaznaczona figura: " + aktualnieZaznaczonaFigura.getSymbol() + " na pozycji " + pozycjaZaznaczonejFigury);
+                podswietlPole(kliknietePole, Color.LIGHTGREEN);
             }else{
                 System.out.println("klikneto puste pole");
             }
@@ -204,6 +199,9 @@ public class GraViewController implements Initializable , KontrolerNawigator {
                 Figura figuraNaDocelowymPolu = figuryNaPolachLogic[row][col];
                 if(figuraNaDocelowymPolu != null){
                     System.out.println("Figura " + figuraNaDocelowymPolu.getSymbol() + " zostala zbita");
+                    podswietlPoleCzas(kliknietePole,Color.MEDIUMVIOLETRED,300);
+                }else{
+                    podswietlPoleCzas(kliknietePole, Color.LIGHTBLUE , 300);
                 }
                 figuryNaPolachLogic[row][col] = aktualnieZaznaczonaFigura;
                 aktualnieZaznaczonaFigura.setPozycja(kliknietePole);
@@ -213,9 +211,48 @@ public class GraViewController implements Initializable , KontrolerNawigator {
                 System.out.println("Przesunieto " + aktualnieZaznaczonaFigura.getSymbol() + " na " + kliknietePole);
 
 
+
+
+
                 aktualnieZaznaczonaFigura = null;
                 pozycjaZaznaczonejFigury = null;
             }
+        }
+    }
+    private void podswietlPoleCzas(Pozycja p, Color kolorRamki , int czas) {
+        PauseTransition pause = new PauseTransition(Duration.millis(czas));
+
+        if (p != null) {
+            StackPane poleGUI = polaSzachownicy[p.getRzad()][p.getKolumna()];
+            //styl pola czyli jego tlo white or black laczmy z ramka
+            poleGUI.setStyle(oryginalneStylePol[p.getRzad()][p.getKolumna()] +
+                    " -fx-border-color: " + KolorToCSS.toWebColor(kolorRamki) + ";" +
+                    " -fx-border-width: 4px;" +
+                    " -fx-border-style: solid;");
+        }
+
+        pause.play();
+        pause.setOnFinished(e ->{
+            przywrocStylPola(p);
+        });
+
+    }
+
+    private void podswietlPole(Pozycja p, Color kolorRamki) {
+        if (p != null) {
+            StackPane poleGUI = polaSzachownicy[p.getRzad()][p.getKolumna()];
+            //styl pola czyli jego tlo white or black laczmy z ramka
+            poleGUI.setStyle(oryginalneStylePol[p.getRzad()][p.getKolumna()] +
+                    " -fx-border-color: " + KolorToCSS.toWebColor(kolorRamki) + ";" +
+                    " -fx-border-width: 4px;" +
+                    " -fx-border-style: solid;");
+        }
+    }
+
+    private void przywrocStylPola(Pozycja p) {
+        if (p != null) {
+            StackPane poleGUI = polaSzachownicy[p.getRzad()][p.getKolumna()];
+            poleGUI.setStyle(oryginalneStylePol[p.getRzad()][p.getKolumna()]);
         }
     }
 }

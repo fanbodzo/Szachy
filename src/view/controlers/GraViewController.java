@@ -3,6 +3,7 @@ package view.controlers;
 import gui.KontrolerNawigator;
 import gui.Nawigator;
 import gui.ViewManager;
+import javafx.application.Platform; // NOWY IMPORT
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -37,7 +38,6 @@ public class GraViewController implements Initializable, KontrolerNawigator {
     private boolean graZakonczona = false;
 
     private final StackPane[][] polaSzachownicy = new StackPane[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
-    // NOWOŚĆ: Przechowujemy referencje do ramek, aby je łatwo usuwać
     private final Region[][] ramkiPodswietlenia = new Region[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
 
     @Override
@@ -53,7 +53,12 @@ public class GraViewController implements Initializable, KontrolerNawigator {
         });
     }
 
+    // --- ZMIANA JEST TUTAJ ---
     private void ustawResponsywnoscSzachownicy() {
+        // Opóźniamy pierwsze przeliczenie, aż layout będzie gotowy
+        Platform.runLater(() -> przeliczRozmiarSzachownicy());
+
+        // Listenery pozostają bez zmian, będą działać przy kolejnych zmianach rozmiaru
         tlo.widthProperty().addListener((obs, oldVal, newVal) -> przeliczRozmiarSzachownicy());
         tlo.heightProperty().addListener((obs, oldVal, newVal) -> przeliczRozmiarSzachownicy());
     }
@@ -70,6 +75,9 @@ public class GraViewController implements Initializable, KontrolerNawigator {
         }
     }
 
+    // Reszta kodu pozostaje bez zmian
+    // ... wklejam dla kompletności
+
     private void utworzSzachowniceGUI() {
         szachownica.getChildren().clear();
         for (int i = 0; i < Plansza.ROZMIAR_PLANSZY; i++) {
@@ -77,7 +85,6 @@ public class GraViewController implements Initializable, KontrolerNawigator {
                 StackPane kwadrat = new StackPane();
                 szachownica.add(kwadrat, j, i);
                 polaSzachownicy[i][j] = kwadrat;
-
                 final int rzad = i;
                 final int kolumna = j;
                 kwadrat.setOnMouseClicked(event -> kliknieciePola(new Pozycja(rzad, kolumna)));
@@ -85,21 +92,14 @@ public class GraViewController implements Initializable, KontrolerNawigator {
         }
     }
 
-    // ZMIANA: Ta metoda teraz czyści i rysuje wszystko od zera w poprawny sposób
     private void odswiezCalaPlansze() {
         for (int r = 0; r < Plansza.ROZMIAR_PLANSZY; r++) {
             for (int k = 0; k < Plansza.ROZMIAR_PLANSZY; k++) {
                 StackPane poleGUI = polaSzachownicy[r][k];
-
-                // Krok 1: Wyczyść wszystko z pola
                 poleGUI.getChildren().clear();
-                usunRamke(r, k); // Usuwamy starą ramkę z tablicy
-
-                // Krok 2: Ustaw kolor tła
+                usunRamke(r, k);
                 Color currentcolor = ((r + k) % 2 == 0) ? Color.web("#F0D9B5") : Color.web("#B58863");
                 poleGUI.setStyle("-fx-background-color: " + KolorToCSS.toWebColor(currentcolor) + ";");
-
-                // Krok 3: Narysuj figurę, jeśli istnieje
                 Figura f = plansza.getFigura(new Pozycja(r, k));
                 if (f != null) {
                     rysujSymbolFigury(poleGUI, f);
@@ -107,8 +107,6 @@ public class GraViewController implements Initializable, KontrolerNawigator {
             }
         }
     }
-
-    // --- KLUCZOWE ZMIANY W PODŚWIETLANIU ---
 
     private void usunRamke(int r, int k) {
         if (ramkiPodswietlenia[r][k] != null) {
@@ -121,29 +119,22 @@ public class GraViewController implements Initializable, KontrolerNawigator {
         if (p != null && plansza.isValidPosition(p)) {
             int r = p.getRzad();
             int k = p.getKolumna();
-
-            // Usuń starą ramkę, jeśli istnieje
             usunRamke(r, k);
-
-            // Stwórz nową ramkę jako osobny Region
             Region ramka = new Region();
             ramka.setStyle("-fx-border-color: " + KolorToCSS.toWebColor(kolorRamki) + ";" +
                     "-fx-border-width: 4px;" +
                     "-fx-border-style: " + stylRamki + ";");
-            ramka.setMouseTransparent(true); // Ramka nie przechwytuje kliknięć
-
-            polaSzachownicy[r][k].getChildren().add(ramka); // Dodaj ramkę jako nową warstwę
-            ramkiPodswietlenia[r][k] = ramka; // Zapisz referencję
+            ramka.setMouseTransparent(true);
+            polaSzachownicy[r][k].getChildren().add(ramka);
+            ramkiPodswietlenia[r][k] = ramka;
         }
     }
 
     private void podswietlDostepnyRuch(Pozycja p) {
         if (p != null && plansza.isValidPosition(p)) {
             if (plansza.getFigura(p) != null) {
-                // Podświetlenie dla bicia
                 podswietlPole(p, Color.DARKRED, "dashed");
             } else {
-                // Podświetlenie dla pustego pola (kropka)
                 StackPane poleGUI = polaSzachownicy[p.getRzad()][p.getKolumna()];
                 Label kropka = new Label("●");
                 kropka.styleProperty().bind(Bindings.createStringBinding(() -> {
@@ -156,12 +147,9 @@ public class GraViewController implements Initializable, KontrolerNawigator {
         }
     }
 
-    // Zmieniamy wywołania podświetlania
-
     private void zaznaczFigure(Figura figura) {
         odznaczWszystko();
         this.zaznaczonaFigura = figura;
-
         List<Pozycja> potencjalneRuchy = figura.getDostepneRuchy(plansza);
         this.dostepneRuchy = new ArrayList<>();
         for (Pozycja cel : potencjalneRuchy) {
@@ -171,9 +159,8 @@ public class GraViewController implements Initializable, KontrolerNawigator {
                 this.dostepneRuchy.add(cel);
             }
         }
-
         if (!this.dostepneRuchy.isEmpty()) {
-            podswietlPole(figura.getPozycja(), Color.LIMEGREEN, "solid"); // ZMIANA
+            podswietlPole(figura.getPozycja(), Color.LIMEGREEN, "solid");
             for (Pozycja p : this.dostepneRuchy) {
                 podswietlDostepnyRuch(p);
             }
@@ -183,9 +170,8 @@ public class GraViewController implements Initializable, KontrolerNawigator {
     private void sprawdzStanGry() {
         boolean czySzach = plansza.czyKrolJestWszachu(aktualnyGracz);
         if (czySzach) {
-            podswietlPole(plansza.znajdzKrola(aktualnyGracz), Color.RED, "solid"); // ZMIANA
+            podswietlPole(plansza.znajdzKrola(aktualnyGracz), Color.RED, "solid");
         }
-
         List<Pozycja[]> wszystkieRuchy = plansza.getWszystkieLegalneRuchy(aktualnyGracz);
         if (wszystkieRuchy.isEmpty()) {
             graZakonczona = true;
@@ -202,17 +188,11 @@ public class GraViewController implements Initializable, KontrolerNawigator {
         if (this.dostepneRuchy != null) {
             this.dostepneRuchy.clear();
         }
-        odswiezCalaPlansze(); // To usunie wszystkie kropki i ramki
-
-        // Po odświeżeniu, sprawdź czy jest szach i narysuj czerwoną ramkę
+        odswiezCalaPlansze();
         if (!graZakonczona && plansza.czyKrolJestWszachu(aktualnyGracz)) {
-            podswietlPole(plansza.znajdzKrola(aktualnyGracz), Color.RED, "solid"); // ZMIANA
+            podswietlPole(plansza.znajdzKrola(aktualnyGracz), Color.RED, "solid");
         }
     }
-
-    // Reszta metod pozostaje bez zmian
-    // ...
-    // Poniżej wklejam je dla kompletności
 
     @Override
     public void setNawigator(Nawigator nawigator) { this.nawigator = nawigator; }

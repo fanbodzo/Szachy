@@ -1,258 +1,273 @@
 package view.controlers;
 
-
 import gui.KontrolerNawigator;
 import gui.Nawigator;
 import gui.ViewManager;
-import javafx.animation.PauseTransition;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-
-import javafx.scene.paint.Color;
-import javafx.util.Duration;
-import model.enums.KolorFigur;
-import model.enums.TypFigury;
-import model.fabryka.FabrykaFigur;
-import model.figury.Figura;
-import model.figury.Kon;
-import utils.KolorToCSS;
-
 import javafx.scene.control.Label;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import model.enums.KolorFigur;
+import model.figury.Figura;
+import model.rdzen.Plansza;
+import utils.KolorToCSS;
 import utils.Pozycja;
 
-import javax.print.attribute.standard.MediaSize;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
-public class GraViewController implements Initializable , KontrolerNawigator {
-    //caly byt borderPane
-    @FXML
-    private BorderPane tlo;
+public class GraViewController implements Initializable, KontrolerNawigator {
 
-    //centralne okno , szachownica
-    @FXML
-    private GridPane szachownica;
-
-    //panele wokol
-    @FXML
-    private Pane lewo;
-    @FXML
-    private Pane prawo;
-    @FXML
-    private Pane gora;
-    @FXML
-    private Pane dol;
+    @FXML private BorderPane tlo;
+    @FXML private GridPane szachownica;
+    @FXML private Pane lewo, prawo, gora, dol;
     @FXML private Button cofnijButton;
 
     private Nawigator nawigator;
-    private StackPane[][] polaSzachownicy = new StackPane[8][8];
+    private Plansza plansza;
+    private KolorFigur aktualnyGracz;
+    private Figura zaznaczonaFigura;
+    private List<Pozycja> dostepneRuchy;
+    private boolean graZakonczona = false;
 
-    private Pozycja pozycjaZaznaczonejFigury = null;
-    private Figura aktualnieZaznaczonaFigura = null;
-    //tablica ktora przechowuje obiekt pole z indkesmi odpowiadjacami szachownicy
-    //nmo czyli kolor figury typ itd i jakie pole
-    private Figura[][] figuryNaPolachLogic = new Figura[8][8];
-    private String[][] oryginalneStylePol = new String[8][8];
-
-    public void setNawigator(Nawigator nawigator) {
-        this.nawigator = nawigator;
-    }
+    private final StackPane[][] polaSzachownicy = new StackPane[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
+    // NOWOŚĆ: Przechowujemy referencje do ramek, aby je łatwo usuwać
+    private final Region[][] ramkiPodswietlenia = new Region[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        utworzSzachowniceGUI();
+        ustawResponsywnoscSzachownicy();
+        nowaGra();
 
-        utworzSzachownice();
-        ustawieniePodstawoweFigur();
+        cofnijButton.setOnAction(e -> {
+            if (this.nawigator != null) {
+                this.nawigator.nawigujDo(ViewManager.STRONA_GLOWNA);
+            }
+        });
     }
 
-    private void utworzSzachownice(){
+    private void ustawResponsywnoscSzachownicy() {
+        tlo.widthProperty().addListener((obs, oldVal, newVal) -> przeliczRozmiarSzachownicy());
+        tlo.heightProperty().addListener((obs, oldVal, newVal) -> przeliczRozmiarSzachownicy());
+    }
+
+    private void przeliczRozmiarSzachownicy() {
+        double szerokoscOkna = tlo.getWidth();
+        double wysokoscOkna = tlo.getHeight();
+        double dostepnaSzerokosc = szerokoscOkna - lewo.getWidth() - prawo.getWidth();
+        double dostepnaWysokosc = wysokoscOkna - gora.getHeight() - dol.getHeight();
+        double rozmiar = Math.min(dostepnaSzerokosc, dostepnaWysokosc);
+        if (rozmiar > 0) {
+            szachownica.setPrefSize(rozmiar, rozmiar);
+            szachownica.setMaxSize(rozmiar, rozmiar);
+        }
+    }
+
+    private void utworzSzachowniceGUI() {
         szachownica.getChildren().clear();
-
-        for(int i=0 ; i<8 ; i++){
-            for(int j=0 ; j<8 ; j++){
+        for (int i = 0; i < Plansza.ROZMIAR_PLANSZY; i++) {
+            for (int j = 0; j < Plansza.ROZMIAR_PLANSZY; j++) {
                 StackPane kwadrat = new StackPane();
-
-                kwadrat.setPrefSize(75,75);
-                Color currentcolor = ((i+j)%2 == 0)? Color.WHITE : Color.DARKSLATEGREY;
-                final String originalStyle = "-fx-background-color: " + KolorToCSS.toWebColor(currentcolor) + ";";
-
-                //uzycie metody statycznie na zamiane koloru na css bo inaczje nie dziala klasa: KolorToCSS  w utils
-                kwadrat.setStyle(originalStyle);
-                oryginalneStylePol[i][j] = originalStyle;
-
-                szachownica.add(kwadrat,j,i);
+                szachownica.add(kwadrat, j, i);
                 polaSzachownicy[i][j] = kwadrat;
 
-                //test dzialania pol
-                final int rzad =  i;
-                final int kolumna =  j;
-                PauseTransition pause = new PauseTransition(Duration.millis(1000));
-                kwadrat.setOnMouseClicked(event -> {
-                    //podswietlnie przeniesone do osbnych metod
-
-                    kliknieciePola(rzad,kolumna);
-
-                });
+                final int rzad = i;
+                final int kolumna = j;
+                kwadrat.setOnMouseClicked(event -> kliknieciePola(new Pozycja(rzad, kolumna)));
             }
         }
-        //TODO przeniesc to do osobenj metody jak bedzie wieecej przyciskow
-        cofnijButton.setOnAction(e -> {
-           this.nawigator.nawigujDo(ViewManager.STRONA_GLOWNA);
-        });
-    }
-    public void rysujFigure(int row , int col , Figura figuraDoNarysowania){
-        StackPane kwadratDocelowy = polaSzachownicy[row][col];
-        kwadratDocelowy.getChildren().clear();
-        if (figuraDoNarysowania != null) {
-            String nazwaFigury = figuraDoNarysowania.getSymbol();
-            Label figuraLabel = new Label(nazwaFigury);
-
-            // Twoje style dla Labela
-            if (figuraDoNarysowania.getKolorFigur() == KolorFigur.BLACK) {
-                figuraLabel.setStyle("-fx-text-fill: #ff8484; -fx-font-size: 24px; -fx-font-weight: bold;");
-            } else {
-                figuraLabel.setStyle("-fx-text-fill: #6e81ea; -fx-font-size: 24px; -fx-font-weight: bold;");
-            }
-            figuraLabel.setMouseTransparent(true);
-            kwadratDocelowy.getChildren().add(figuraLabel);
-        }
-
     }
 
-    //zmienilem metode ale nie wiem czy tutaj bede zdjecia dodawa chyba tak zoabcze
-    public void postawFigure(int rzad, int kolumna, TypFigury typ, KolorFigur kolor){
+    // ZMIANA: Ta metoda teraz czyści i rysuje wszystko od zera w poprawny sposób
+    private void odswiezCalaPlansze() {
+        for (int r = 0; r < Plansza.ROZMIAR_PLANSZY; r++) {
+            for (int k = 0; k < Plansza.ROZMIAR_PLANSZY; k++) {
+                StackPane poleGUI = polaSzachownicy[r][k];
 
-        Figura nowaFigura = FabrykaFigur.utworzFigure(typ, kolor);
-        //wpisanie do tablicy
-        figuryNaPolachLogic[rzad][kolumna] = nowaFigura;
-        nowaFigura.setPozycja(new Pozycja(rzad, kolumna));
-        rysujFigure(rzad, kolumna, nowaFigura);
-    }
+                // Krok 1: Wyczyść wszystko z pola
+                poleGUI.getChildren().clear();
+                usunRamke(r, k); // Usuwamy starą ramkę z tablicy
 
-    // narazie wstaiwm labele zeby zoacbzyc czy jest git
-    public void ustawieniePodstawoweFigur(){
+                // Krok 2: Ustaw kolor tła
+                Color currentcolor = ((r + k) % 2 == 0) ? Color.web("#F0D9B5") : Color.web("#B58863");
+                poleGUI.setStyle("-fx-background-color: " + KolorToCSS.toWebColor(currentcolor) + ";");
 
-        postawFigure(0, 0, TypFigury.WIEZA, KolorFigur.BLACK);
-        postawFigure(0, 1, TypFigury.KON, KolorFigur.BLACK);
-        postawFigure(0, 2, TypFigury.GONIEC, KolorFigur.BLACK);
-        postawFigure(0, 3, TypFigury.HETMAN, KolorFigur.BLACK);
-        postawFigure(0, 4, TypFigury.KROL, KolorFigur.BLACK);
-        postawFigure(0, 5, TypFigury.GONIEC, KolorFigur.BLACK);
-        postawFigure(0, 6, TypFigury.KON, KolorFigur.BLACK);
-        postawFigure(0, 7, TypFigury.WIEZA, KolorFigur.BLACK);
-
-        postawFigure(7, 0, TypFigury.WIEZA, KolorFigur.WHITE);
-        postawFigure(7, 1, TypFigury.KON, KolorFigur.WHITE);
-        postawFigure(7, 2, TypFigury.GONIEC, KolorFigur.WHITE);
-        postawFigure(7, 3, TypFigury.HETMAN, KolorFigur.WHITE);
-        postawFigure(7, 4, TypFigury.KROL, KolorFigur.WHITE);
-        postawFigure(7, 5, TypFigury.GONIEC, KolorFigur.WHITE);
-        postawFigure(7, 6, TypFigury.KON, KolorFigur.WHITE);
-        postawFigure(7, 7, TypFigury.WIEZA, KolorFigur.WHITE);
-
-        for(int i=0; i<8; i++){
-            postawFigure(1, i, TypFigury.PION, KolorFigur.BLACK);
-            postawFigure(6, i, TypFigury.PION, KolorFigur.WHITE);
-        }
-    }
-
-    private void kliknieciePola(int row , int col){
-        Pozycja kliknietePole = new Pozycja(row,col);
-        System.out.println(kliknietePole);
-
-        //zdejmnowanie zazanczenia
-        if (pozycjaZaznaczonejFigury != null) {
-            przywrocStylPola(pozycjaZaznaczonejFigury);
-        }
-
-        if(aktualnieZaznaczonaFigura == null){
-            Figura figuraKliknieta = figuryNaPolachLogic[row][col];
-            if(figuraKliknieta != null){
-                aktualnieZaznaczonaFigura = figuraKliknieta;
-                pozycjaZaznaczonejFigury = kliknietePole;
-                //info co sie dzieje bedzie mozna wykorzystac pozniej do pisania logow
-                System.out.println("Zaznaczona figura: " + aktualnieZaznaczonaFigura.getSymbol() + " na pozycji " + pozycjaZaznaczonejFigury);
-                podswietlPole(kliknietePole, Color.LIGHTGREEN);
-            }else{
-                System.out.println("klikneto puste pole");
-            }
-
-        }else{
-            //odznaczanie jezeli kliknelismy jeszcze raz to samo majac juz zazanczone cos
-            if (kliknietePole.equals(pozycjaZaznaczonejFigury)) {
-                System.out.println("Odznaczono figurę: " + aktualnieZaznaczonaFigura.getSymbol());
-                aktualnieZaznaczonaFigura = null;
-                pozycjaZaznaczonejFigury = null;
-            }else{
-                //TODO tutaj trzeba dodac walidacje ruchu ale to pozniej
-
-                figuryNaPolachLogic[pozycjaZaznaczonejFigury.getRzad()][pozycjaZaznaczonejFigury.getKolumna()] = null;
-                //czysczenie pola dlatego null
-                rysujFigure(pozycjaZaznaczonejFigury.getRzad(), pozycjaZaznaczonejFigury.getKolumna(), null);
-
-                //bicie bez walidacji
-                Figura figuraNaDocelowymPolu = figuryNaPolachLogic[row][col];
-                if(figuraNaDocelowymPolu != null){
-                    System.out.println("Figura " + figuraNaDocelowymPolu.getSymbol() + " zostala zbita");
-                    podswietlPoleCzas(kliknietePole,Color.MEDIUMVIOLETRED,300);
-                }else{
-                    podswietlPoleCzas(kliknietePole, Color.LIGHTBLUE , 300);
+                // Krok 3: Narysuj figurę, jeśli istnieje
+                Figura f = plansza.getFigura(new Pozycja(r, k));
+                if (f != null) {
+                    rysujSymbolFigury(poleGUI, f);
                 }
-                figuryNaPolachLogic[row][col] = aktualnieZaznaczonaFigura;
-                aktualnieZaznaczonaFigura.setPozycja(kliknietePole);
-
-                rysujFigure(row, col, aktualnieZaznaczonaFigura);
-
-                System.out.println("Przesunieto " + aktualnieZaznaczonaFigura.getSymbol() + " na " + kliknietePole);
-
-
-
-
-
-                aktualnieZaznaczonaFigura = null;
-                pozycjaZaznaczonejFigury = null;
             }
         }
     }
-    private void podswietlPoleCzas(Pozycja p, Color kolorRamki , int czas) {
-        PauseTransition pause = new PauseTransition(Duration.millis(czas));
 
-        if (p != null) {
-            StackPane poleGUI = polaSzachownicy[p.getRzad()][p.getKolumna()];
-            //styl pola czyli jego tlo white or black laczmy z ramka
-            poleGUI.setStyle(oryginalneStylePol[p.getRzad()][p.getKolumna()] +
-                    " -fx-border-color: " + KolorToCSS.toWebColor(kolorRamki) + ";" +
-                    " -fx-border-width: 4px;" +
-                    " -fx-border-style: solid;");
-        }
+    // --- KLUCZOWE ZMIANY W PODŚWIETLANIU ---
 
-        pause.play();
-        pause.setOnFinished(e ->{
-            przywrocStylPola(p);
-        });
-
-    }
-
-    private void podswietlPole(Pozycja p, Color kolorRamki) {
-        if (p != null) {
-            StackPane poleGUI = polaSzachownicy[p.getRzad()][p.getKolumna()];
-            //styl pola czyli jego tlo white or black laczmy z ramka
-            poleGUI.setStyle(oryginalneStylePol[p.getRzad()][p.getKolumna()] +
-                    " -fx-border-color: " + KolorToCSS.toWebColor(kolorRamki) + ";" +
-                    " -fx-border-width: 4px;" +
-                    " -fx-border-style: solid;");
+    private void usunRamke(int r, int k) {
+        if (ramkiPodswietlenia[r][k] != null) {
+            polaSzachownicy[r][k].getChildren().remove(ramkiPodswietlenia[r][k]);
+            ramkiPodswietlenia[r][k] = null;
         }
     }
 
-    private void przywrocStylPola(Pozycja p) {
-        if (p != null) {
-            StackPane poleGUI = polaSzachownicy[p.getRzad()][p.getKolumna()];
-            poleGUI.setStyle(oryginalneStylePol[p.getRzad()][p.getKolumna()]);
+    private void podswietlPole(Pozycja p, Color kolorRamki, String stylRamki) {
+        if (p != null && plansza.isValidPosition(p)) {
+            int r = p.getRzad();
+            int k = p.getKolumna();
+
+            // Usuń starą ramkę, jeśli istnieje
+            usunRamke(r, k);
+
+            // Stwórz nową ramkę jako osobny Region
+            Region ramka = new Region();
+            ramka.setStyle("-fx-border-color: " + KolorToCSS.toWebColor(kolorRamki) + ";" +
+                    "-fx-border-width: 4px;" +
+                    "-fx-border-style: " + stylRamki + ";");
+            ramka.setMouseTransparent(true); // Ramka nie przechwytuje kliknięć
+
+            polaSzachownicy[r][k].getChildren().add(ramka); // Dodaj ramkę jako nową warstwę
+            ramkiPodswietlenia[r][k] = ramka; // Zapisz referencję
         }
+    }
+
+    private void podswietlDostepnyRuch(Pozycja p) {
+        if (p != null && plansza.isValidPosition(p)) {
+            if (plansza.getFigura(p) != null) {
+                // Podświetlenie dla bicia
+                podswietlPole(p, Color.DARKRED, "dashed");
+            } else {
+                // Podświetlenie dla pustego pola (kropka)
+                StackPane poleGUI = polaSzachownicy[p.getRzad()][p.getKolumna()];
+                Label kropka = new Label("●");
+                kropka.styleProperty().bind(Bindings.createStringBinding(() -> {
+                    double size = Math.min(poleGUI.getWidth(), poleGUI.getHeight());
+                    return "-fx-font-size: " + (size * 0.4) + "px; -fx-text-fill: rgba(0,0,0,0.4);";
+                }, poleGUI.widthProperty(), poleGUI.heightProperty()));
+                kropka.setMouseTransparent(true);
+                poleGUI.getChildren().add(kropka);
+            }
+        }
+    }
+
+    // Zmieniamy wywołania podświetlania
+
+    private void zaznaczFigure(Figura figura) {
+        odznaczWszystko();
+        this.zaznaczonaFigura = figura;
+
+        List<Pozycja> potencjalneRuchy = figura.getDostepneRuchy(plansza);
+        this.dostepneRuchy = new ArrayList<>();
+        for (Pozycja cel : potencjalneRuchy) {
+            Plansza kopia = new Plansza(plansza);
+            kopia.wykonajRuch(figura.getPozycja(), cel);
+            if (!kopia.czyKrolJestWszachu(aktualnyGracz)) {
+                this.dostepneRuchy.add(cel);
+            }
+        }
+
+        if (!this.dostepneRuchy.isEmpty()) {
+            podswietlPole(figura.getPozycja(), Color.LIMEGREEN, "solid"); // ZMIANA
+            for (Pozycja p : this.dostepneRuchy) {
+                podswietlDostepnyRuch(p);
+            }
+        }
+    }
+
+    private void sprawdzStanGry() {
+        boolean czySzach = plansza.czyKrolJestWszachu(aktualnyGracz);
+        if (czySzach) {
+            podswietlPole(plansza.znajdzKrola(aktualnyGracz), Color.RED, "solid"); // ZMIANA
+        }
+
+        List<Pozycja[]> wszystkieRuchy = plansza.getWszystkieLegalneRuchy(aktualnyGracz);
+        if (wszystkieRuchy.isEmpty()) {
+            graZakonczona = true;
+            if (czySzach) {
+                pokazAlert("Szach-Mat!", "Wygrywa " + ((aktualnyGracz == KolorFigur.WHITE) ? "CZARNY" : "BIAŁY"));
+            } else {
+                pokazAlert("Pat!", "Gra zakończona remisem.");
+            }
+        }
+    }
+
+    private void odznaczWszystko() {
+        this.zaznaczonaFigura = null;
+        if (this.dostepneRuchy != null) {
+            this.dostepneRuchy.clear();
+        }
+        odswiezCalaPlansze(); // To usunie wszystkie kropki i ramki
+
+        // Po odświeżeniu, sprawdź czy jest szach i narysuj czerwoną ramkę
+        if (!graZakonczona && plansza.czyKrolJestWszachu(aktualnyGracz)) {
+            podswietlPole(plansza.znajdzKrola(aktualnyGracz), Color.RED, "solid"); // ZMIANA
+        }
+    }
+
+    // Reszta metod pozostaje bez zmian
+    // ...
+    // Poniżej wklejam je dla kompletności
+
+    @Override
+    public void setNawigator(Nawigator nawigator) { this.nawigator = nawigator; }
+    private void nowaGra() {
+        this.plansza = new Plansza();
+        this.plansza.ulozenieStandardoweFigur();
+        this.aktualnyGracz = KolorFigur.WHITE;
+        this.zaznaczonaFigura = null;
+        this.dostepneRuchy = new ArrayList<>();
+        this.graZakonczona = false;
+        odswiezCalaPlansze();
+        System.out.println("Nowa gra. Zaczynają białe.");
+    }
+    private void rysujSymbolFigury(StackPane pole, Figura figura) {
+        String symbolUnicode;
+        switch(figura.getTypFigury()) {
+            case KROL: symbolUnicode = (figura.getKolorFigur() == KolorFigur.WHITE) ? "♔" : "♚"; break;
+            case HETMAN: symbolUnicode = (figura.getKolorFigur() == KolorFigur.WHITE) ? "♕" : "♛"; break;
+            case WIEZA: symbolUnicode = (figura.getKolorFigur() == KolorFigur.WHITE) ? "♖" : "♜"; break;
+            case GONIEC: symbolUnicode = (figura.getKolorFigur() == KolorFigur.WHITE) ? "♗" : "♝"; break;
+            case KON: symbolUnicode = (figura.getKolorFigur() == KolorFigur.WHITE) ? "♘" : "♞"; break;
+            case PION: symbolUnicode = (figura.getKolorFigur() == KolorFigur.WHITE) ? "♙" : "♟"; break;
+            default: symbolUnicode = "";
+        }
+        Label figuraLabel = new Label(symbolUnicode);
+        figuraLabel.setMouseTransparent(true);
+        figuraLabel.styleProperty().bind(Bindings.createStringBinding(() -> {
+            double size = Math.min(pole.getWidth(), pole.getHeight());
+            return "-fx-font-size: " + (size * 0.7) + "px;";
+        }, pole.widthProperty(), pole.heightProperty()));
+        pole.getChildren().add(figuraLabel);
+    }
+    private void kliknieciePola(Pozycja kliknietePole) {
+        if (graZakonczona) return;
+        Figura figuraNaPolu = plansza.getFigura(kliknietePole);
+        if (zaznaczonaFigura != null && dostepneRuchy.contains(kliknietePole)) {
+            wykonajRuch(zaznaczonaFigura.getPozycja(), kliknietePole);
+        } else if (figuraNaPolu != null && figuraNaPolu.getKolorFigur() == aktualnyGracz) {
+            zaznaczFigure(figuraNaPolu);
+        } else {
+            odznaczWszystko();
+        }
+    }
+    private void wykonajRuch(Pozycja start, Pozycja koniec) {
+        plansza.wykonajRuch(start, koniec);
+        aktualnyGracz = (aktualnyGracz == KolorFigur.WHITE) ? KolorFigur.BLACK : KolorFigur.WHITE;
+        odznaczWszystko();
+        sprawdzStanGry();
+        System.out.println("Następna tura: " + aktualnyGracz);
+    }
+    private void pokazAlert(String tytul, String wiadomosc) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Koniec Gry");
+        alert.setHeaderText(tytul);
+        alert.setContentText(wiadomosc);
+        alert.showAndWait();
     }
 }

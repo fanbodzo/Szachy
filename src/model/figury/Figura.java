@@ -2,21 +2,22 @@ package model.figury;
 
 import model.enums.KolorFigur;
 import model.enums.TypFigury;
-import utils.*;
+import model.rdzen.Plansza; // NOWOŚĆ
+import utils.Pozycja;
 
-import java.util.List;
+import java.util.List; // NOWOŚĆ
 
 public abstract class Figura {
     protected KolorFigur kolorFigur;
-    //aktualna pozycja figury zarzadzana przez plansze
     protected Pozycja pozycja;
-    //zeby wiedziec jaki to typ figury do obslugi ruchow  na peno si eprzyda
     protected TypFigury typFigury;
+    protected boolean czyPierwszyRuch = true; // NOWOŚĆ: Ważne dla piona, roszady
 
     public Figura(KolorFigur kolorFigur, TypFigury typ) {
         this.kolorFigur = kolorFigur;
         this.typFigury = typ;
     }
+
     public KolorFigur getKolorFigur() {
         return kolorFigur;
     }
@@ -24,20 +25,30 @@ public abstract class Figura {
     public Pozycja getPozycja() {
         return pozycja;
     }
+
     public void setPozycja(Pozycja pozycja) {
         this.pozycja = pozycja;
     }
 
-    //metoda abstrkcyja ktora beda implementowac figury
-    //naraie zwraca null ale bedzie przydatne
-    // repreznatacja np BP - bialy pionek BH- bialy Hetman
+    public boolean isCzyPierwszyRuch() { // NOWOŚĆ
+        return czyPierwszyRuch;
+    }
+
+    public void setCzyPierwszyRuch(boolean czyPierwszyRuch) { // NOWOŚĆ
+        this.czyPierwszyRuch = czyPierwszyRuch;
+    }
+
     public String getSymbol() {
-        return null;
+        // Ta metoda jest teraz nadpisywana w każdej klasie potomnej, więc implementacja tutaj jest zbędna
+        return "";
     }
 
     public TypFigury getTypFigury() {
         return typFigury;
     }
+
+    // NOWOŚĆ: Każda figura musi umieć powiedzieć, gdzie może się ruszyć
+    public abstract List<Pozycja> getDostepneRuchy(Plansza plansza);
 
     @Override
     public String toString() {

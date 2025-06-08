@@ -15,7 +15,27 @@
     </Tab>
     <Tab fx:id="konto" text="Konto">
       <content>
-        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+          <VBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 20;">
+              <children>
+                  <Label text="Informacje o koncie:" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+
+                  <HBox spacing="10">
+                      <children>
+                          <Label text="Login:" style="-fx-font-weight: bold;" />
+                          <Label fx:id="loginLabel" text="-" />
+                      </children>
+                  </HBox>
+
+                  <HBox spacing="10">
+                      <children>
+                          <Label text="Data rejestracji:" style="-fx-font-weight: bold;" />
+                          <Label fx:id="dataRejestracjiLabel" text="-" />
+                      </children>
+                  </HBox>
+
+
+              </children>
+          </VBox>
       </content>
     </Tab>
   </tabs>

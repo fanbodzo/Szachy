@@ -8,6 +8,7 @@ import java.net.Socket;
 
 
 import javafx.application.Platform;
+import model.Uzytkownik;
 
 public class KlientSieciowy {
     private Socket socket;
@@ -16,6 +17,7 @@ public class KlientSieciowy {
     private String serverAddress = "127.0.0.1";
     private int port = 4999;
     private Thread listenerThread;
+    private Uzytkownik currentUser;
 
     public KlientSieciowy() {}
 
@@ -31,28 +33,31 @@ public class KlientSieciowy {
     }
 
 
+    // W pliku Klient/KlientSieciowy.java
+
     public boolean login(String username, String password) throws IOException {
         connect();
 
-        // Przykład protokołu: "LOGIN:username:password"
         String loginMessage = "LOGIN:" + username + ":" + password;
         System.out.println("[KlientSieciowy] Wysyłam dane logowania: " + loginMessage);
         out.println(loginMessage);
 
-        String serverResponse = in.readLine(); // Czekaj na odpowiedź serwera
+        String serverResponse = in.readLine();
         System.out.println("[KlientSieciowy] Odpowiedź serwera: " + serverResponse);
 
-        if (serverResponse != null && serverResponse.startsWith("LOGIN_SUCCESS")) {
-            // mozna wywolac tutaj jakas metode na przekazanie danych uzytkownia do guui
-            // String[] parts = serverResponse.split(":");
-            // String userId = parts[1];
-            // this.currentUser = new User(username, userId);
+        // ZMIANA TUTAJ:
+        if (serverResponse != null && serverResponse.equals("LOGIN_SUCCESS")) {
+            // Po udanym logowaniu, tworzymy i zapamiętujemy obiekt użytkownika
+            this.currentUser = new Uzytkownik(username);
+            System.out.println("[KlientSieciowy] Zapisano bieżącego użytkownika: " + username);
             return true;
         } else {
-
-            //TODO ZMIENIC TO NA FALSE JAK DAMY DANE LOGOWANIA
-            return true;
+            this.currentUser = null; // Wyczyść użytkownika w razie błędu
+            return false;
         }
+    }
+    public Uzytkownik getCurrentUser() {
+        return currentUser;
     }
 
     public void startListening() {

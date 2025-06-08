@@ -42,7 +42,17 @@
     -fx-background-color: #321321;
     -fx-text-fill: #ffffff;
 }
+#loginLabel{
+    -fx-font-size: 14px;
+    -fx-text-fill: #f51111;
 
+}
+
+#dataRejestracjiLabel{
+    -fx-font-size: 14px;
+    -fx-text-fill: #f51111;
+
+}
 
 /* sekcja od okna graView */
 #tlo {

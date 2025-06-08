@@ -1,48 +1,40 @@
-import java.io.BufferedReader;
+import db.UserDatabaseManager;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-// Ta klasa służy TYLKO do testowania. Jest całkowicie niezależna od reszty projektu.
 public class TestSerwer {
 
+    public static final int PORT = 4999;
+
     public static void main(String[] args) {
-        int port = 4999;
-        System.out.println("[TestSerwer] Uruchamiam testowy serwer na porcie: " + port);
+        // 1. Inicjalizujemy bazę danych PRZED startem serwera
+        System.out.println("[SERWER] Inicjalizacja menedżera bazy danych...");
+        UserDatabaseManager dbManager = new UserDatabaseManager();
+        System.out.println("[SERWER] Menedżer bazy danych gotowy.");
 
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("[TestSerwer] Nasłuchuję na połączenia...");
+        // Tworzymy pulę wątków, aby serwer mógł obsługiwać wielu klientów naraz
+        ExecutorService pool = Executors.newCachedThreadPool();
 
-            // Czekaj na jedno połączenie od klienta
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("[TestSerwer] Klient połączony: " + clientSocket.getInetAddress());
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("[SERWER] Serwer szachowy uruchomiony na porcie " + PORT);
+            System.out.println("[SERWER] Oczekuję na połączenia od klientów...");
 
-            // Automatycznie zamyka strumienie po zakończeniu bloku try
-            try (
-                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-            ) {
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    System.out.println("[TestSerwer] Otrzymałem: '" + inputLine + "'");
+            while (true) {
+                // Czekaj na połączenie od klienta
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("[SERWER] Nowe połączenie od: " + clientSocket.getInetAddress().getHostAddress());
 
-                    if ("exit".equalsIgnoreCase(inputLine)) {
-                        out.println("Do widzenia!");
-                        break;
-                    }
-
-                    // Odeślij wiadomość z powrotem (echo)
-                    out.println("Serwer testowy odsyła: " + inputLine);
-                }
+                // Dla każdego klienta utwórz nowy wątek obsługi (ClientHandler)
+                // i przekaż mu dostęp do managera bazy danych
+                pool.submit(new ClientHandler(clientSocket, dbManager));
             }
-            System.out.println("[TestSerwer] Zamykanie połączenia z klientem.");
 
         } catch (IOException e) {
-            System.err.println("[TestSerwer] Błąd: " + e.getMessage());
+            System.err.println("[SERWER] Krytyczny błąd serwera: " + e.getMessage());
             e.printStackTrace();
         }
-        System.out.println("[TestSerwer] Serwer testowy zakończył działanie.");
     }
 }

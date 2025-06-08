@@ -64,6 +64,8 @@ public class UserDatabaseManager {
 
         ensureDatabaseExists();
         initializeUserTable();
+        //tworzy defaultowego klienta jak nie ma nic w bazie
+        createDefaultUserIfNeeded();
     }
 
     private Connection getConnectionToServer() throws SQLException {
@@ -114,17 +116,64 @@ public class UserDatabaseManager {
     // Na razie są to tylko puste szablony (placeholdery)
 
     public boolean registerUser(String login, String plainPassword) {
-        System.out.println("DEBUG: Metoda registerUser wywołana dla: " + login);
+        System.out.println("INFO: Próba rejestracji użytkownika: " + login);
+        // Zgodnie z prośbą, na razie przechowujemy hasło jako zwykły tekst w kolumnie `haslo_hash`.
+        // W produkcyjnej aplikacji NALEŻY użyć algorytmu do hashowania (np. BCrypt).
+        String sql = "INSERT INTO Uzytkownicy(login, haslo_hash) VALUES(?, ?)";
 
-        System.out.println("OSTRZEŻENIE: Rejestracja użytkownika nie została jeszcze zaimplementowana!");
-        return false;
+        try (Connection conn = getConnectionToDatabase();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, login);
+            pstmt.setString(2, plainPassword);
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                System.out.println("INFO: Użytkownik '" + login + "' został pomyślnie zarejestrowany.");
+                return true;
+            } else {
+                return false;
+            }
+        } catch (SQLException e) {
+            // Kod 1062 to błąd duplikatu klucza unikalnego (login już istnieje)
+            if (e.getErrorCode() == 1062) {
+                System.err.println("BŁĄD REJESTRACJI: Użytkownik o loginie '" + login + "' już istnieje.");
+            } else {
+                System.err.println("BŁĄD REJESTRACJI: Problem SQL podczas rejestracji '" + login + "': " + e.getMessage());
+            }
+            return false;
+        }
     }
 
-    public Uzytkownik loginUser(String login, String plainPassword) {
-        System.out.println("DEBUG: Metoda loginUser wywołana dla: " + login);
+    // Zmieniamy typ zwracany na boolean dla prostoty
+    public boolean loginUser(String login, String plainPassword) {
+        System.out.println("INFO: Próba logowania użytkownika: " + login);
+        String sql = "SELECT haslo_hash FROM Uzytkownicy WHERE login = ?";
 
-        System.out.println("OSTRZEŻENIE: Logowanie użytkownika nie zostało jeszcze zaimplementowane!");
-        return null;
+        try (Connection conn = getConnectionToDatabase();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, login);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // Znaleziono użytkownika, teraz sprawdzamy hasło
+                String storedPassword = rs.getString("haslo_hash");
+                boolean passwordMatches = storedPassword.equals(plainPassword);
+                if (passwordMatches) {
+                    System.out.println("INFO: Logowanie użytkownika '" + login + "' powiodło się.");
+                } else {
+                    System.out.println("WARN: Nieprawidłowe hasło dla użytkownika '" + login + "'.");
+                }
+                return passwordMatches;
+            } else {
+                System.out.println("WARN: Nie znaleziono użytkownika o loginie '" + login + "'.");
+                return false; // Nie ma takiego użytkownika
+            }
+        } catch (SQLException e) {
+            System.err.println("BŁĄD LOGOWANIA: Problem SQL podczas logowania '" + login + "': " + e.getMessage());
+            return false;
+        }
     }
 
     // Główna metoda do testowania inicjalizacji
@@ -157,5 +206,38 @@ public class UserDatabaseManager {
             System.err.println("--- Sprawdź, czy sterownik MySQL Connector/J jest poprawnie dodany do projektu ---");
         }
         System.out.println("--- KONIEC TESTU UserDatabaseManager ---");
+    }
+    // W pliku db/UserDatabaseManager.java
+
+    private void createDefaultUserIfNeeded() {
+        String defaultLogin = "admin";
+        String defaultPassword = "admin";
+
+        // Zapytanie, które sprawdzi, czy użytkownik o danym loginie już istnieje
+        String sqlCheckUser = "SELECT COUNT(*) AS user_count FROM Uzytkownicy WHERE login = ?";
+
+        try (Connection conn = getConnectionToDatabase();
+             PreparedStatement pstmt = conn.prepareStatement(sqlCheckUser)) {
+
+            pstmt.setString(1, defaultLogin);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                int userCount = rs.getInt("user_count");
+                if (userCount == 0) {
+                    // Jeśli nie ma takiego użytkownika, to go rejestrujemy
+                    System.out.println("INFO: Domyślny użytkownik '" + defaultLogin + "' nie istnieje. Tworzenie...");
+                    // Używamy naszej istniejącej metody registerUser!
+                    registerUser(defaultLogin, defaultPassword);
+                } else {
+                    // Jeśli użytkownik już jest w bazie, nic nie robimy
+                    System.out.println("INFO: Domyślny użytkownik '" + defaultLogin + "' już istnieje w bazie danych.");
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("BŁĄD: Nie można było sprawdzić/utworzyć domyślnego użytkownika: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

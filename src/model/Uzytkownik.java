@@ -19,6 +19,10 @@ public class Uzytkownik {
         this.login = login;
         this.hasloHash = hasloHash;
     }
+    public Uzytkownik(String login) {
+        this.login = login;
+    }
+
 
     // Gettery
     public int getId() { return id; }

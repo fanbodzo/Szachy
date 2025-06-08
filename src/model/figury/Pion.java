@@ -50,8 +50,37 @@ public class Pion extends Figura {
             }
         }
 
-        // TODO: Bicie w przelocie (en passant) - do implementacji później
+        // Bicie w przelocie (en passant)
+        Pozycja enPassantTarget = plansza.getEnPassantTargetSquare();
+        if (enPassantTarget != null) {
+            // Sprawdzamy, czy cel bicia w przelocie jest jednym z możliwych pól ataku tego piona
+            Pozycja lewyAtak = new Pozycja(pozycja.getRzad() + kierunek, pozycja.getKolumna() - 1);
+            Pozycja prawyAtak = new Pozycja(pozycja.getRzad() + kierunek, pozycja.getKolumna() + 1);
+
+            if (enPassantTarget.equals(lewyAtak) || enPassantTarget.equals(prawyAtak)) {
+                ruchy.add(enPassantTarget);
+            }
+        }
 
         return ruchy;
+    }
+
+    /**
+     * NOWOŚĆ: Metoda zwracająca tylko te pola, które pion atakuje.
+     * Jest to potrzebne do precyzyjnego sprawdzania szachów.
+     * @param plansza Aktualny stan planszy.
+     * @return Lista pól atakowanych po skosie.
+     */
+    public List<Pozycja> getAtakowanePola(Plansza plansza) {
+        List<Pozycja> ataki = new ArrayList<>();
+        int kierunek = (getKolorFigur() == KolorFigur.WHITE) ? -1 : 1;
+        int[] kolumnyBicia = {-1, 1};
+        for (int dk : kolumnyBicia) {
+            Pozycja poleAtaku = new Pozycja(pozycja.getRzad() + kierunek, pozycja.getKolumna() + dk);
+            if (plansza.isValidPosition(poleAtaku)) {
+                ataki.add(poleAtaku);
+            }
+        }
+        return ataki;
     }
 }

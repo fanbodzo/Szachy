@@ -4,6 +4,7 @@ import model.enums.KolorFigur;
 import model.enums.TypFigury;
 import model.fabryka.FabrykaFigur;
 import model.figury.Figura;
+import model.figury.Pion;
 import utils.Pozycja;
 
 import java.util.ArrayList;
@@ -12,15 +13,12 @@ import java.util.List;
 public class Plansza {
     private final Figura[][] kwadraty;
     public static final int ROZMIAR_PLANSZY = 8;
+    private Pozycja enPassantTargetSquare;
 
     public Plansza() {
         this.kwadraty = new Figura[ROZMIAR_PLANSZY][ROZMIAR_PLANSZY];
     }
 
-    /**
-     * Konstruktor kopiujący. Tworzy głęboką kopię planszy, co jest kluczowe dla symulacji ruchów.
-     * @param inna Plansza do skopiowania.
-     */
     public Plansza(Plansza inna) {
         this.kwadraty = new Figura[ROZMIAR_PLANSZY][ROZMIAR_PLANSZY];
         for (int r = 0; r < ROZMIAR_PLANSZY; r++) {
@@ -28,13 +26,13 @@ public class Plansza {
                 Pozycja p = new Pozycja(r, k);
                 Figura f = inna.getFigura(p);
                 if (f != null) {
-                    // Tworzymy nową instancję figury, aby uniknąć modyfikacji oryginalnej planszy
                     Figura nowaFigura = FabrykaFigur.utworzFigure(f.getTypFigury(), f.getKolorFigur());
-                    nowaFigura.setCzyPierwszyRuch(f.isCzyPierwszyRuch()); // Kopiujemy też stan pierwszego ruchu
+                    nowaFigura.setCzyPierwszyRuch(f.isCzyPierwszyRuch());
                     this.setFigura(p, nowaFigura);
                 }
             }
         }
+        this.enPassantTargetSquare = inna.enPassantTargetSquare;
     }
 
     public boolean isValidPosition(Pozycja pozycja) {
@@ -64,18 +62,48 @@ public class Plansza {
 
     public void wykonajRuch(Pozycja start, Pozycja koniec) {
         Figura figura = getFigura(start);
-        if (figura != null) {
-            setFigura(koniec, figura);
-            setFigura(start, null);
-            figura.setCzyPierwszyRuch(false);
+        if (figura == null) {
+            return;
+        }
+
+        Pozycja poprzedniEnPassantTarget = this.enPassantTargetSquare;
+        this.enPassantTargetSquare = null;
+
+        if (figura.getTypFigury() == TypFigury.PION && koniec.equals(poprzedniEnPassantTarget)) {
+            int kierunekPionaZbitego = (figura.getKolorFigur() == KolorFigur.WHITE) ? 1 : -1;
+            setFigura(new Pozycja(koniec.getRzad() + kierunekPionaZbitego, koniec.getKolumna()), null);
+        }
+
+        if (figura.getTypFigury() == TypFigury.KROL && Math.abs(start.getKolumna() - koniec.getKolumna()) == 2) {
+            if (koniec.getKolumna() > start.getKolumna()) {
+                Figura wieza = getFigura(new Pozycja(start.getRzad(), 7));
+                setFigura(new Pozycja(start.getRzad(), 5), wieza);
+                setFigura(new Pozycja(start.getRzad(), 7), null);
+            } else {
+                Figura wieza = getFigura(new Pozycja(start.getRzad(), 0));
+                setFigura(new Pozycja(start.getRzad(), 3), wieza);
+                setFigura(new Pozycja(start.getRzad(), 0), null);
+            }
+        }
+
+        setFigura(koniec, figura);
+        setFigura(start, null);
+        figura.setCzyPierwszyRuch(false);
+
+        if (figura.getTypFigury() == TypFigury.PION && Math.abs(start.getRzad() - koniec.getRzad()) == 2) {
+            int kierunek = (figura.getKolorFigur() == KolorFigur.WHITE) ? -1 : 1;
+            this.enPassantTargetSquare = new Pozycja(start.getRzad() + kierunek, start.getKolumna());
+        }
+
+        if (figura.getTypFigury() == TypFigury.PION) {
+            if ((figura.getKolorFigur() == KolorFigur.WHITE && koniec.getRzad() == 0) ||
+                    (figura.getKolorFigur() == KolorFigur.BLACK && koniec.getRzad() == 7)) {
+                Figura hetman = FabrykaFigur.utworzFigure(TypFigury.HETMAN, figura.getKolorFigur());
+                setFigura(koniec, hetman);
+            }
         }
     }
 
-    /**
-     * Znajduje pozycję króla danego koloru.
-     * @param kolorKrola Kolor króla do znalezienia.
-     * @return Pozycja króla lub null, jeśli nie znaleziono.
-     */
     public Pozycja znajdzKrola(KolorFigur kolorKrola) {
         for (int r = 0; r < ROZMIAR_PLANSZY; r++) {
             for (int k = 0; k < ROZMIAR_PLANSZY; k++) {
@@ -85,10 +113,11 @@ public class Plansza {
                 }
             }
         }
-        return null; // Sytuacja awaryjna, nie powinna wystąpić w normalnej grze
+        return null;
     }
 
     /**
+     * ZMIANA: Przerobiona metoda, aby unikać nieskończonej rekursji.
      * Sprawdza, czy dane pole jest atakowane przez figury przeciwnika.
      * @param pole Pole do sprawdzenia.
      * @param kolorAtakujacego Kolor figur, które mogą atakować.
@@ -99,7 +128,27 @@ public class Plansza {
             for (int k = 0; k < ROZMIAR_PLANSZY; k++) {
                 Figura f = getFigura(new Pozycja(r, k));
                 if (f != null && f.getKolorFigur() == kolorAtakujacego) {
-                    List<Pozycja> atakowanePola = f.getDostepneRuchy(this);
+                    List<Pozycja> atakowanePola;
+
+                    // Logika specjalna, aby przerwać pętlę rekursji
+                    if (f.getTypFigury() == TypFigury.KROL) {
+                        // Sprawdzamy atak króla bezpośrednio, bez wołania getDostepneRuchy
+                        atakowanePola = new ArrayList<>();
+                        int[][] kierunki = {
+                                {-1, -1}, {-1, 0}, {-1, 1}, {0, -1},
+                                {0, 1}, {1, -1}, {1, 0}, {1, 1}
+                        };
+                        for (int[] dir : kierunki) {
+                            atakowanePola.add(new Pozycja(f.getPozycja().getRzad() + dir[0], f.getPozycja().getKolumna() + dir[1]));
+                        }
+                    } else if (f.getTypFigury() == TypFigury.PION) {
+                        // Używamy nowej, precyzyjnej metody dla piona
+                        atakowanePola = ((Pion) f).getAtakowanePola(this);
+                    } else {
+                        // Standardowa metoda dla reszty figur (Wieża, Goniec, Hetman, Kon)
+                        atakowanePola = f.getDostepneRuchy(this);
+                    }
+
                     if (atakowanePola.contains(pole)) {
                         return true;
                     }
@@ -109,11 +158,6 @@ public class Plansza {
         return false;
     }
 
-    /**
-     * Sprawdza, czy król danego koloru jest aktualnie w szachu.
-     * @param kolorKrola Kolor króla do sprawdzenia.
-     * @return true, jeśli król jest w szachu.
-     */
     public boolean czyKrolJestWszachu(KolorFigur kolorKrola) {
         Pozycja pozycjaKrola = znajdzKrola(kolorKrola);
         if (pozycjaKrola == null) {
@@ -123,11 +167,6 @@ public class Plansza {
         return czyPoleJestAtakowane(pozycjaKrola, kolorPrzeciwnika);
     }
 
-    /**
-     * Generuje listę WSZYSTKICH możliwych ruchów dla gracza, które są w 100% legalne (nie zostawiają króla w szachu).
-     * @param kolorGracza Kolor gracza, dla którego generujemy ruchy.
-     * @return Lista legalnych ruchów, gdzie każdy ruch to tablica [pozycja_startowa, pozycja_koncowa].
-     */
     public List<Pozycja[]> getWszystkieLegalneRuchy(KolorFigur kolorGracza) {
         List<Pozycja[]> legalneRuchy = new ArrayList<>();
         for (int r = 0; r < ROZMIAR_PLANSZY; r++) {
@@ -148,6 +187,12 @@ public class Plansza {
         return legalneRuchy;
     }
 
+    public Pozycja getEnPassantTargetSquare() {
+        return enPassantTargetSquare;
+    }
+
+    // Metody ulozenieStandardoweFigur() i wyswietlaniePlanszy() bez zmian...
+    // ...
     public void ulozenieStandardoweFigur() {
         for (int r = 0; r < ROZMIAR_PLANSZY; r++) {
             for (int k = 0; k < ROZMIAR_PLANSZY; k++) {
@@ -194,7 +239,6 @@ public class Plansza {
                 if (figura == null) {
                     System.out.print(" . ");
                 } else {
-                    // Używam symboli unicode dla lepszej czytelności w konsoli
                     String symbol;
                     switch(figura.getTypFigury()) {
                         case KROL: symbol = (figura.getKolorFigur() == KolorFigur.WHITE) ? "♔" : "♚"; break;

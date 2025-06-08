@@ -14,5 +14,6 @@
          </image>
       </ImageView>
       <Button fx:id="loginButton" layoutX="275.0" layoutY="325.0" mnemonicParsing="false" text="Zaloguj" textAlignment="CENTER" />
+      <Label fx:id="errorLabel" layoutX="286.0" layoutY="208.0" />
    </children>
 </Pane>

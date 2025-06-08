@@ -1,10 +1,13 @@
 package gui;
 
+import Klient.KlientSieciowy;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import view.controlers.LoginViewController;
+
+import gui.KontrolerKlienta;
 
 import java.io.IOException;
 
@@ -12,9 +15,11 @@ import java.io.IOException;
 public class Nawigator {
     private final Stage stage;
     private final String cssUrl = "/resources/styles/gra.css";
+    private final KlientSieciowy klientSieciowy;
 
-    public Nawigator(Stage stage) {
+    public Nawigator(Stage stage, KlientSieciowy klient) {
         this.stage = stage;
+        this.klientSieciowy = klient;
     }
 
     public <T> T nawigujDo(ViewManager viewManager) {
@@ -23,9 +28,18 @@ public class Nawigator {
             Parent root = loader.load();
 
             T controller = loader.getController();
+            //wstyrzkneicei nawigatora
             if (controller instanceof KontrolerNawigator) {
                 ((KontrolerNawigator) controller).setNawigator(this);
                 // przekazywanie this zeby moc wstrzykac nawitagora w innych klasach
+            }
+            //wstrzykniecie klientaSieciowego
+            if (controller instanceof KontrolerKlienta) {
+                ((KontrolerKlienta) controller).setKlientSieciowy(this.klientSieciowy);
+                System.out.println("[Nawigator] KlientSieciowy wstrzyknięty do kontrolera: " + controller.getClass().getSimpleName());
+            } else {
+                // To nie jest blad po prostu informacja, że kontroler nie potrzebuje klienta sieciowego
+                System.out.println("[Nawigator] Kontroler " + controller.getClass().getSimpleName() + " nie implementuje KontrolerKlienta.");
             }
 
             Scene scene = stage.getScene();

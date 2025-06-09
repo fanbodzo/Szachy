@@ -27,30 +27,64 @@
     -fx-text-fill: #000000;
     -fx-font-weight: bold;
 }
+#errorLabel{
+    -fx-font-size: 14px;
+    -fx-text-fill: #ff1a1a;
+}
 /* sekcja od okna glownaStronaView */
 #bg{
     -fx-background-color: #123123;
 }
-#grajButton{
+#createGameButton{
     -fx-background-color: #007e0e;
     -fx-text-fill: #000000;
     -fx-font-weight: bold;
     -fx-border-color: #bfbfbf;
     -fx-border-width: 2;
 }
-#grajButton:pressed{
+#createGameButton:pressed{
     -fx-background-color: #321321;
     -fx-text-fill: #ffffff;
 }
-#loginLabel{
+#refreshButton{
+    -fx-background-color: #007e0e;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+    -fx-border-color: #bfbfbf;
+    -fx-border-width: 2;
+}
+#refreshButton:pressed{
+    -fx-background-color: #321321;
+    -fx-text-fill: #ffffff;
+}
+#otwarteGryLabel{
     -fx-font-size: 14px;
-    -fx-text-fill: #f51111;
-
+    -fx-text-fill: #ffffff;
+}
+#gamesListView{
+    -fx-background-color: #195914;
 }
 
+#loginLabel{
+    -fx-font-size: 14px;
+    -fx-text-fill: #ffffff;
+
+}
+#login2Label{
+    -fx-font-size: 14px;
+    -fx-text-fill: #ffffff;
+}
+#dataRLabel{
+    -fx-font-size: 14px;
+    -fx-text-fill: #ffffff;
+}
+#informacjeKontoLabel{
+    -fx-font-size: 20px;
+    -fx-text-fill: #ffffff;
+}
 #dataRejestracjiLabel{
     -fx-font-size: 14px;
-    -fx-text-fill: #f51111;
+    -fx-text-fill: #ffffff;
 
 }
 

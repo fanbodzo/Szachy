@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.*?>
 
-<!-- Zwiększamy domyślny rozmiar, ale layout będzie elastyczny -->
 <BorderPane fx:id="tlo" prefHeight="800.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="view.controlers.GraViewController">
     <center>
-        <!-- NOWOŚĆ: Umieszczamy GridPane wewnątrz StackPane. To kluczowa zmiana. -->
         <StackPane fx:id="kontenerSzachownicy" BorderPane.alignment="CENTER">
             <GridPane fx:id="szachownica" gridLinesVisible="true">
                 <columnConstraints>
@@ -33,11 +32,15 @@
         </StackPane>
     </center>
     <top>
-        <Pane fx:id="gora" prefHeight="75.0" BorderPane.alignment="CENTER">
+        <!-- ZMIANA: Zmieniono Pane na VBox, aby lepiej ułożyć elementy -->
+        <VBox alignment="CENTER" prefHeight="75.0" spacing="5" style="-fx-padding: 5;" BorderPane.alignment="CENTER">
             <children>
-                <Button fx:id="cofnijButton" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" text="Cofnij" />
+                <!-- NOWOŚĆ: Etykieta do wyświetlania informacji o przeciwniku -->
+                <Label fx:id="opponentInfoLabel" text="Oczekiwanie na dołączenie przeciwnika..." style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+                <!-- ZMIANA: Zmieniono tekst przycisku dla jasności -->
+                <Button fx:id="cofnijButton" mnemonicParsing="false" text="Poddaj grę i wróć do menu" />
             </children>
-        </Pane>
+        </VBox>
     </top>
     <left>
         <Pane fx:id="lewo" prefWidth="100.0" BorderPane.alignment="CENTER" />

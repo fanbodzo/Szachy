@@ -1,42 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
 <TabPane fx:id="bg" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="view.controlers.GlownaStronaViewController">
-  <tabs>
-    <Tab fx:id="stronaGlowna" text="Strona Glowna">
-      <content>
-        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-               <children>
-                  <Button fx:id="grajButton" layoutX="215.0" layoutY="112.0" mnemonicParsing="false" text="Graj" textAlignment="CENTER"/>
-               </children></AnchorPane>
-      </content>
-    </Tab>
-    <Tab fx:id="konto" text="Konto">
-      <content>
-          <VBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 20;">
-              <children>
-                  <Label text="Informacje o koncie:" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
-
-                  <HBox spacing="10">
-                      <children>
-                          <Label text="Login:" style="-fx-font-weight: bold;" />
-                          <Label fx:id="loginLabel" text="-" />
-                      </children>
-                  </HBox>
-
-                  <HBox spacing="10">
-                      <children>
-                          <Label text="Data rejestracji:" style="-fx-font-weight: bold;" />
-                          <Label fx:id="dataRejestracjiLabel" text="-" />
-                      </children>
-                  </HBox>
-
-
-              </children>
-          </VBox>
-      </content>
-    </Tab>
-  </tabs>
+    <tabs>
+        <Tab fx:id="stronaGlowna" text="Strona Główna">
+            <content>
+                <VBox alignment="TOP_CENTER" spacing="10" style="-fx-padding: 20;">
+                    <children>
+                        <!-- NOWOŚĆ: HBox do grupowania przycisków -->
+                        <HBox alignment="CENTER" spacing="20">
+                            <children>
+                                <Button fx:id="createGameButton" mnemonicParsing="false" text="Utwórz nową grę" />
+                                <Button fx:id="refreshButton" mnemonicParsing="false" text="Odśwież listę" />
+                            </children>
+                        </HBox>
+                        <Label text="Otwarte gry (kliknij dwukrotnie, aby dołączyć):" style="-fx-font-weight: bold;" />
+                        <ListView fx:id="gamesListView" prefHeight="200.0" VBox.vgrow="ALWAYS" />
+                    </children>
+                </VBox>
+            </content>
+        </Tab>
+        <Tab fx:id="konto" text="Konto">
+            <content>
+                <VBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 20;">
+                    <children>
+                        <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Informacje o koncie:" />
+                        <HBox spacing="10">
+                            <children>
+                                <Label style="-fx-font-weight: bold;" text="Login:" />
+                                <Label fx:id="loginLabel" text="-" />
+                            </children>
+                        </HBox>
+                        <HBox spacing="10">
+                            <children>
+                                <Label style="-fx-font-weight: bold;" text="Data rejestracji:" />
+                                <Label fx:id="dataRejestracjiLabel" text="-" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </content>
+        </Tab>
+    </tabs>
 </TabPane>

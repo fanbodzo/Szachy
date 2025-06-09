@@ -1,16 +1,20 @@
+
 package gui;
 
 import Klient.KlientSieciowy;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
-import view.controlers.LoginViewController;
-
-import gui.KontrolerKlienta;
 
 import java.io.IOException;
-
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class Nawigator {
     private final Stage stage;
@@ -22,24 +26,25 @@ public class Nawigator {
         this.klientSieciowy = klient;
     }
 
-    public <T> T nawigujDo(ViewManager viewManager) {
+    public <T> T nawigujDo(ViewManager viewManager, Object... params) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(viewManager.getFxmlFile()));
             Parent root = loader.load();
 
             T controller = loader.getController();
-            //wstyrzkneicei nawigatora
+
             if (controller instanceof KontrolerNawigator) {
                 ((KontrolerNawigator) controller).setNawigator(this);
-                // przekazywanie this zeby moc wstrzykac nawitagora w innych klasach
             }
-            //wstrzykniecie klientaSieciowego
+
             if (controller instanceof KontrolerKlienta) {
                 ((KontrolerKlienta) controller).setKlientSieciowy(this.klientSieciowy);
                 System.out.println("[Nawigator] KlientSieciowy wstrzyknięty do kontrolera: " + controller.getClass().getSimpleName());
-            } else {
-                // To nie jest blad po prostu informacja, że kontroler nie potrzebuje klienta sieciowego
-                System.out.println("[Nawigator] Kontroler " + controller.getClass().getSimpleName() + " nie implementuje KontrolerKlienta.");
+            }
+
+            if (params.length > 0 && controller instanceof KontrolerDanychGry) {
+                ((KontrolerDanychGry) controller).przekazDaneGry(params);
+                System.out.println("[Nawigator] Przekazano dane do kontrolera: " + controller.getClass().getSimpleName());
             }
 
             Scene scene = stage.getScene();
@@ -49,7 +54,10 @@ public class Nawigator {
             } else {
                 scene.setRoot(root);
             }
-            stage.getScene().getStylesheets().add(cssUrl);
+
+            if (!stage.getScene().getStylesheets().contains(cssUrl)) {
+                stage.getScene().getStylesheets().add(cssUrl);
+            }
             stage.setTitle(nazwaOkna(viewManager));
             stage.centerOnScreen();
 
@@ -57,16 +65,20 @@ public class Nawigator {
                 stage.show();
             }
             return controller;
-        } catch (IOException e) {
-
+        } catch (Exception e) { // Zmieniamy na ogólny Exception, aby łapać WSZYSTKO
+            System.err.println("KRYTYCZNY BŁĄD NAWIGACJI: Nie udało się załadować widoku " + viewManager.name());
             e.printStackTrace();
+            // Pokaż okno błędu użytkownikowi
+            pokazBladKrytyczny("Błąd ładowania widoku",
+                    "Wystąpił nieoczekiwany błąd podczas próby otwarcia okna: " + viewManager.name(), e);
             return null;
         }
-
     }
 
+    public <T> T nawigujDo(ViewManager viewManager) {
+        return nawigujDo(viewManager, new Object[]{});
+    }
 
-    //to mozna zamienic w enum zeby dac po przecinku druga wartosc jako nazwe okna i nie zasmiecac tak kodu
     public String nazwaOkna(ViewManager viewManager) {
         switch (viewManager) {
             case LOGIN:
@@ -74,9 +86,39 @@ public class Nawigator {
             case GRA:
                 return "Gra - Szachy";
             case STRONA_GLOWNA:
-                return "Strona Glowna - Szachy";
+                return "Strona Główna - Szachy";
             default:
                 return "Szachy";
         }
+    }
+
+    // Metoda pomocnicza do wyświetlania błędów
+    private void pokazBladKrytyczny(String title, String header, Exception ex) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(ex.getMessage());
+
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        ex.printStackTrace(pw);
+        String exceptionText = sw.toString();
+
+        Label label = new Label("Szczegóły błędu:");
+        TextArea textArea = new TextArea(exceptionText);
+        textArea.setEditable(false);
+        textArea.setWrapText(true);
+        textArea.setMaxWidth(Double.MAX_VALUE);
+        textArea.setMaxHeight(Double.MAX_VALUE);
+        GridPane.setVgrow(textArea, Priority.ALWAYS);
+        GridPane.setHgrow(textArea, Priority.ALWAYS);
+
+        GridPane expContent = new GridPane();
+        expContent.setMaxWidth(Double.MAX_VALUE);
+        expContent.add(label, 0, 0);
+        expContent.add(textArea, 0, 1);
+
+        alert.getDialogPane().setExpandableContent(expContent);
+        alert.showAndWait();
     }
 }

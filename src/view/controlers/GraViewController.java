@@ -3,13 +3,14 @@ package view.controlers;
 import gui.KontrolerNawigator;
 import gui.Nawigator;
 import gui.ViewManager;
-import javafx.application.Platform; // NOWY IMPORT
+import gui.KontrolerDanychGry; // NOWY IMPORT
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.Label; // NOWY IMPORT
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.enums.KolorFigur;
@@ -23,12 +24,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class GraViewController implements Initializable, KontrolerNawigator {
+public class GraViewController implements Initializable, KontrolerNawigator, KontrolerDanychGry {
 
     @FXML private BorderPane tlo;
     @FXML private GridPane szachownica;
     @FXML private Pane lewo, prawo, gora, dol;
     @FXML private Button cofnijButton;
+    @FXML private Label opponentInfoLabel; // NOWOŚĆ: Etykieta na info o przeciwniku
 
     private Nawigator nawigator;
     private Plansza plansza;
@@ -36,6 +38,7 @@ public class GraViewController implements Initializable, KontrolerNawigator {
     private Figura zaznaczonaFigura;
     private List<Pozycja> dostepneRuchy;
     private boolean graZakonczona = false;
+    private String opponentLogin; // NOWOŚĆ: Pole na login przeciwnika
 
     private final StackPane[][] polaSzachownicy = new StackPane[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
     private final Region[][] ramkiPodswietlenia = new Region[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
@@ -48,17 +51,35 @@ public class GraViewController implements Initializable, KontrolerNawigator {
 
         cofnijButton.setOnAction(e -> {
             if (this.nawigator != null) {
+                // TODO: Dodać logikę informowania serwera o przerwaniu gry
                 this.nawigator.nawigujDo(ViewManager.STRONA_GLOWNA);
             }
         });
     }
 
-    // --- ZMIANA JEST TUTAJ ---
-    private void ustawResponsywnoscSzachownicy() {
-        // Opóźniamy pierwsze przeliczenie, aż layout będzie gotowy
-        Platform.runLater(() -> przeliczRozmiarSzachownicy());
+    // NOWOŚĆ: Implementacja metody z interfejsu KontrolerDanychGry
+    @Override
+    public void przekazDaneGry(Object... dane) {
+        if (dane.length > 0 && dane[0] instanceof String) {
+            this.opponentLogin = (String) dane[0];
+            System.out.println("[GraViewController] Odebrano dane. Rozpoczynam grę z: " + this.opponentLogin);
 
-        // Listenery pozostają bez zmian, będą działać przy kolejnych zmianach rozmiaru
+            // Aktualizujemy etykietę w wątku JavaFX, aby uniknąć błędów
+            Platform.runLater(() -> {
+                if (opponentInfoLabel != null) {
+                    opponentInfoLabel.setText("Grasz przeciwko: " + this.opponentLogin);
+                }
+            });
+        }
+    }
+
+    // Reszta klasy (bez zmian)
+
+    @Override
+    public void setNawigator(Nawigator nawigator) { this.nawigator = nawigator; }
+
+    private void ustawResponsywnoscSzachownicy() {
+        Platform.runLater(this::przeliczRozmiarSzachownicy);
         tlo.widthProperty().addListener((obs, oldVal, newVal) -> przeliczRozmiarSzachownicy());
         tlo.heightProperty().addListener((obs, oldVal, newVal) -> przeliczRozmiarSzachownicy());
     }
@@ -75,9 +96,6 @@ public class GraViewController implements Initializable, KontrolerNawigator {
         }
     }
 
-    // Reszta kodu pozostaje bez zmian
-    // ... wklejam dla kompletności
-
     private void utworzSzachowniceGUI() {
         szachownica.getChildren().clear();
         for (int i = 0; i < Plansza.ROZMIAR_PLANSZY; i++) {
@@ -91,6 +109,9 @@ public class GraViewController implements Initializable, KontrolerNawigator {
             }
         }
     }
+
+    // ... i tak dalej, cała reszta metod z GraViewController jest identyczna jak w twoim kodzie ...
+    // (Poniżej wklejam resztę dla kompletności)
 
     private void odswiezCalaPlansze() {
         for (int r = 0; r < Plansza.ROZMIAR_PLANSZY; r++) {
@@ -194,8 +215,6 @@ public class GraViewController implements Initializable, KontrolerNawigator {
         }
     }
 
-    @Override
-    public void setNawigator(Nawigator nawigator) { this.nawigator = nawigator; }
     private void nowaGra() {
         this.plansza = new Plansza();
         this.plansza.ulozenieStandardoweFigur();
@@ -206,6 +225,7 @@ public class GraViewController implements Initializable, KontrolerNawigator {
         odswiezCalaPlansze();
         System.out.println("Nowa gra. Zaczynają białe.");
     }
+
     private void rysujSymbolFigury(StackPane pole, Figura figura) {
         String symbolUnicode;
         switch(figura.getTypFigury()) {

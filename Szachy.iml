@@ -207,5 +207,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="mysql-connector-j-8.4" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
   </component>
 </module>

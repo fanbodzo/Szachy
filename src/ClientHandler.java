@@ -9,63 +9,102 @@ import java.net.SocketException;
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final UserDatabaseManager dbManager;
+    private final TestSerwer server;
+    private final GameLobbyManager lobbyManager;
+    private PrintWriter out;
+    private String currentUserLogin = null;
 
-    public ClientHandler(Socket socket, UserDatabaseManager dbManager) {
+    public ClientHandler(Socket socket, UserDatabaseManager dbManager, TestSerwer server, GameLobbyManager lobbyManager) {
         this.clientSocket = socket;
         this.dbManager = dbManager;
+        this.server = server;
+        this.lobbyManager = lobbyManager;
     }
 
     @Override
     public void run() {
-        try (
-                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-        ) {
+        try {
+            this.out = new PrintWriter(clientSocket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            sendMessage("HELLO");
+
             String request;
             while ((request = in.readLine()) != null) {
-                System.out.println("[ClientHandler dla " + clientSocket.getPort() + "] Odebrano: " + request);
-                handleRequest(request, out);
+                String logPrefix = (currentUserLogin != null) ? currentUserLogin : clientSocket.getRemoteSocketAddress().toString();
+                System.out.println("[ClientHandler dla " + logPrefix + "] Odebrano: " + request);
+                handleRequest(request);
             }
         } catch (SocketException e) {
-            System.out.println("[ClientHandler dla " + clientSocket.getPort() + "] Klient się rozłączył (SocketException).");
+            String logPrefix = (currentUserLogin != null) ? currentUserLogin : clientSocket.getRemoteSocketAddress().toString();
+            System.out.println("[ClientHandler dla " + logPrefix + "] Klient się rozłączył.");
         } catch (IOException e) {
-            System.err.println("[ClientHandler dla " + clientSocket.getPort() + "] Błąd komunikacji: " + e.getMessage());
+            System.err.println("[ClientHandler] Błąd komunikacji: " + e.getMessage());
         } finally {
+            if (currentUserLogin != null) {
+                server.removeClient(currentUserLogin);
+            }
             try {
                 clientSocket.close();
             } catch (IOException e) { /* ignoruj */ }
         }
     }
 
-    private void handleRequest(String request, PrintWriter out) {
+    private void handleRequest(String request) {
         String[] parts = request.split(":", 3);
-        String command = parts[0];
+        String command = parts[0].toUpperCase();
         String response;
 
-        if (parts.length < 3) {
-            response = "ERROR:INVALID_FORMAT";
-            out.println(response);
-            return;
-        }
-
-        String login = parts[1];
-        String password = parts[2];
-
-        switch (command.toUpperCase()) {
+        switch (command) {
             case "LOGIN":
+                if (parts.length < 3) return;
+                String login = parts[1];
+                String password = parts[2];
                 boolean isLoggedIn = dbManager.loginUser(login, password);
-                response = isLoggedIn ? "LOGIN_SUCCESS" : "LOGIN_FAILURE";
+                if (isLoggedIn) {
+                    this.currentUserLogin = login;
+                    server.addClient(login, this);
+                    response = "LOGIN_SUCCESS";
+                } else {
+                    response = "LOGIN_FAILURE";
+                }
+                sendMessage(response);
+                if (isLoggedIn) {
+                    lobbyManager.broadcastOpenGames();
+                }
                 break;
-            case "REGISTER":
-                boolean isRegistered = dbManager.registerUser(login, password);
-                response = isRegistered ? "REGISTER_SUCCESS" : "REGISTER_FAILURE";
+            case "CREATE_GAME":
+                if (currentUserLogin != null) {
+                    lobbyManager.createGame(currentUserLogin);
+                }
                 break;
+            case "JOIN_GAME":
+                if (currentUserLogin != null && parts.length > 1) {
+                    String gameId = parts[1];
+                    lobbyManager.joinGame(gameId, currentUserLogin);
+                }
+                break;
+
+            // ===== NOWA KOMENDA =====
+            case "GET_GAMES_LIST":
+                // Wyślij listę gier tylko do tego klienta, który o nią prosił
+                String payload = lobbyManager.getGamesListPayload();
+                sendMessage("GAMES_LIST:" + payload);
+                break;
+            // =========================
+
             default:
                 response = "ERROR:UNKNOWN_COMMAND";
+                sendMessage(response);
                 break;
         }
+    }
 
-        System.out.println("[ClientHandler dla " + clientSocket.getPort() + "] Wysyłam odpowiedź: " + response);
-        out.println(response);
+    public void sendMessage(String message) {
+        if (out != null && !clientSocket.isClosed()) {
+            String logPrefix = (currentUserLogin != null) ? currentUserLogin : "NOWY_KLIENT";
+            System.out.println("[ClientHandler dla " + logPrefix + "] Wysyłam: " + message);
+            out.println(message);
+        }
     }
 }

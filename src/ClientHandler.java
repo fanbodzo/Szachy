@@ -1,4 +1,6 @@
 import db.UserDatabaseManager;
+import utils.Pozycja;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -51,9 +53,9 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleRequest(String request) {
-        String[] parts = request.split(":", 3);
+        // Zwiększamy limit części do 5, aby obsłużyć komendę MOVE
+        String[] parts = request.split(":", 5);
         String command = parts[0].toUpperCase();
-        String response;
 
         switch (command) {
             case "LOGIN":
@@ -64,20 +66,19 @@ public class ClientHandler implements Runnable {
                 if (isLoggedIn) {
                     this.currentUserLogin = login;
                     server.addClient(login, this);
-                    response = "LOGIN_SUCCESS";
-                } else {
-                    response = "LOGIN_FAILURE";
-                }
-                sendMessage(response);
-                if (isLoggedIn) {
+                    sendMessage("LOGIN_SUCCESS");
                     lobbyManager.broadcastOpenGames();
+                } else {
+                    sendMessage("LOGIN_FAILURE");
                 }
                 break;
+
             case "CREATE_GAME":
                 if (currentUserLogin != null) {
                     lobbyManager.createGame(currentUserLogin);
                 }
                 break;
+
             case "JOIN_GAME":
                 if (currentUserLogin != null && parts.length > 1) {
                     String gameId = parts[1];
@@ -85,17 +86,27 @@ public class ClientHandler implements Runnable {
                 }
                 break;
 
-            // ===== NOWA KOMENDA =====
             case "GET_GAMES_LIST":
-                // Wyślij listę gier tylko do tego klienta, który o nią prosił
                 String payload = lobbyManager.getGamesListPayload();
                 sendMessage("GAMES_LIST:" + payload);
                 break;
-            // =========================
+
+            case "MOVE":
+                if (currentUserLogin != null && parts.length == 5) {
+                    try {
+                        int fromRow = Integer.parseInt(parts[1]);
+                        int fromCol = Integer.parseInt(parts[2]);
+                        int toRow = Integer.parseInt(parts[3]);
+                        int toCol = Integer.parseInt(parts[4]);
+                        server.obsluzRuch(currentUserLogin, new Pozycja(fromRow, fromCol), new Pozycja(toRow, toCol));
+                    } catch (NumberFormatException e) {
+                        System.err.println("Błędny format komendy MOVE: " + request);
+                    }
+                }
+                break;
 
             default:
-                response = "ERROR:UNKNOWN_COMMAND";
-                sendMessage(response);
+                sendMessage("ERROR:UNKNOWN_COMMAND");
                 break;
         }
     }

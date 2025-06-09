@@ -19,10 +19,8 @@ import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 public class GlownaStronaViewController implements Initializable, KontrolerNawigator, KontrolerKlienta {
-
-    // ... (istniejące pola)
     @FXML private Button createGameButton;
-    @FXML private Button refreshButton; // NOWOŚĆ
+    @FXML private Button refreshButton;
     @FXML private ListView<String> gamesListView;
     @FXML private Label loginLabel;
     @FXML private Label dataRejestracjiLabel;
@@ -40,8 +38,9 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
 
         if (klientSieciowy != null) {
             klientSieciowy.setOnGameListUpdate(this::updateGamesList);
-            klientSieciowy.setOnGameStart(opponentLogin -> Platform.runLater(() -> {
-                nawigator.nawigujDo(ViewManager.GRA, opponentLogin);
+            klientSieciowy.setOnGameStart(data -> Platform.runLater(() -> {
+                // data[0] to login przeciwnika, data[1] to nasz kolor
+                nawigator.nawigujDo(ViewManager.GRA, data[0], data[1]);
             }));
         }
     }
@@ -53,7 +52,6 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Akcja dla przycisku tworzenia gry
         createGameButton.setOnAction(event -> {
             if (klientSieciowy != null) {
                 klientSieciowy.createGame();
@@ -61,22 +59,19 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
             }
         });
 
-        // NOWOŚĆ: Akcja dla przycisku odświeżania
         refreshButton.setOnAction(event -> {
             if (klientSieciowy != null) {
-                System.out.println("[GlownaStronaViewController] Wysyłanie prośby o odświeżenie listy gier.");
                 klientSieciowy.refreshGamesList();
             }
         });
 
         gamesListView.setItems(openGamesData);
 
-        // Akcja dla dołączania do gry
         gamesListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                String selectedGameDisplay = gamesListView.getSelectionModel().getSelectedItem();
-                if (selectedGameDisplay != null) {
-                    String gameId = gameDisplayToIdMap.get(selectedGameDisplay);
+                String selectedItem = gamesListView.getSelectionModel().getSelectedItem();
+                if (selectedItem != null && !selectedItem.contains("(Twoja gra, oczekiwanie...)")) {
+                    String gameId = gameDisplayToIdMap.get(selectedItem);
                     if (gameId != null && klientSieciowy != null) {
                         klientSieciowy.joinGame(gameId);
                     }
@@ -85,7 +80,6 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
         });
     }
 
-    // Ta metoda pozostaje bez zmian, ale będzie teraz wywoływana zarówno przez broadcast, jak i na żądanie
     private void updateGamesList(List<String> games) {
         Platform.runLater(() -> {
             openGamesData.clear();
@@ -110,9 +104,6 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
                 }
 
                 String displayName = "Gra gracza: " + hostLogin;
-                if(myLogin.equals(hostLogin)){
-                    displayName += " (Twoja gra, oczekiwanie...)";
-                }
                 openGamesData.add(displayName);
                 gameDisplayToIdMap.put(displayName, gameId);
             }

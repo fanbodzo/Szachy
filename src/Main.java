@@ -41,7 +41,7 @@ public class Main extends Application {
     public static void main(String[] args) {
         Plansza szachownica = new Plansza();
         szachownica.ulozenieStandardoweFigur();
-        szachownica.wyswietlaniePlanszy();
+        //szachownica.wyswietlaniePlanszy();
 
         launch(args);
     }

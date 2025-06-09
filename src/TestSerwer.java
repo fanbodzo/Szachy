@@ -1,86 +1,101 @@
 import db.UserDatabaseManager;
+import model.AktywnaGra;
+import utils.Pozycja;
+
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 
 public class TestSerwer {
-
     public static final int PORT = 4999;
-    // NOWOŚĆ: Mapa przechowująca uchwyty do klientów (login -> ClientHandler)
-    private final Map<String, ClientHandler> connectedClients = new ConcurrentHashMap<>();
-    private final GameLobbyManager lobbyManager;
+    private final Map<String, ClientHandler> activeClients = new ConcurrentHashMap<>();
+    private final GameLobbyManager lobbyManager = new GameLobbyManager(this);
 
-    public TestSerwer() {
-        this.lobbyManager = new GameLobbyManager(this);
-    }
+    private final Map<String, AktywnaGra> aktywneGry = new ConcurrentHashMap<>();
+    private final Map<String, String> graczDoGryId = new ConcurrentHashMap<>();
 
-    // NOWOŚĆ: Metoda do dodawania klienta po pomyślnym zalogowaniu
     public void addClient(String login, ClientHandler handler) {
-        connectedClients.put(login, handler);
-        System.out.println("[SERWER] Zalogowany klient dodany do listy: " + login);
-        // Po dodaniu, od razu wyślij mu aktualną listę gier
-        handler.sendMessage("GAMES_LIST:" + lobbyManager.getGamesListPayload());
+        activeClients.put(login, handler);
     }
 
-    // NOWOŚĆ: Metoda do usuwania klienta
     public void removeClient(String login) {
-        if (login != null) {
-            connectedClients.remove(login);
-            System.out.println("[SERWER] Klient wylogowany/rozłączony: " + login);
-        }
+        activeClients.remove(login);
+        // TODO: Obsłużyć sytuację, gdy gracz w trakcie gry się rozłącza
     }
 
-    // NOWOŚĆ: Wysyła wiadomość do wszystkich zalogowanych klientów
     public void broadcastMessage(String message) {
-        System.out.println("[SERWER BROADCAST] " + message);
-        for (ClientHandler handler : connectedClients.values()) {
-            handler.sendMessage(message);
+        activeClients.values().forEach(client -> client.sendMessage(message));
+    }
+
+    public void rozpocznijGre(String hostLogin, String joiningPlayerLogin) {
+        String gameId = UUID.randomUUID().toString();
+        AktywnaGra nowaGra = new AktywnaGra(hostLogin, joiningPlayerLogin);
+
+        aktywneGry.put(gameId, nowaGra);
+        graczDoGryId.put(nowaGra.getGraczBialyLogin(), gameId);
+        graczDoGryId.put(nowaGra.getGraczCzarnyLogin(), gameId);
+
+        ClientHandler bialyHandler = activeClients.get(nowaGra.getGraczBialyLogin());
+        ClientHandler czarnyHandler = activeClients.get(nowaGra.getGraczCzarnyLogin());
+
+        if (bialyHandler != null) {
+            bialyHandler.sendMessage("GAME_START:" + nowaGra.getGraczCzarnyLogin() + ":WHITE");
+        }
+        if (czarnyHandler != null) {
+            czarnyHandler.sendMessage("GAME_START:" + nowaGra.getGraczBialyLogin() + ":BLACK");
         }
     }
 
-    // NOWOŚĆ: Informuje konkretnych graczy o starcie gry
-    public void notifyGameStart(String playerToSendTo, String opponentLogin) {
-        ClientHandler handler = connectedClients.get(playerToSendTo);
-        if (handler != null) {
-            // Format: GAME_START:przeciwnik
-            handler.sendMessage("GAME_START:" + opponentLogin);
-        }
-    }
+    public void obsluzRuch(String loginGracza, Pozycja start, Pozycja koniec) {
+        String gameId = graczDoGryId.get(loginGracza);
+        if (gameId == null) return;
 
-    public void startServer() {
-        System.out.println("[SERWER] Inicjalizacja menedżera bazy danych...");
-        UserDatabaseManager dbManager = new UserDatabaseManager();
-        System.out.println("[SERWER] Menedżer bazy danych gotowy.");
+        AktywnaGra gra = aktywneGry.get(gameId);
+        if (gra == null) return;
 
-        ExecutorService pool = Executors.newCachedThreadPool();
+        if (gra.wykonajRuch(loginGracza, start, koniec)) {
+            // Ruch był legalny, roześlij nowy stan planszy
+            String stanPlanszy = gra.getPlansza().doZapisuString();
+            String wiadomosc = "UPDATE_BOARD:" + stanPlanszy;
 
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("[SERWER] Serwer szachowy uruchomiony na porcie " + PORT);
-            System.out.println("[SERWER] Oczekuję na połączenia od klientów...");
+            ClientHandler bialyHandler = activeClients.get(gra.getGraczBialyLogin());
+            ClientHandler czarnyHandler = activeClients.get(gra.getGraczCzarnyLogin());
 
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("[SERWER] Nowe połączenie od: " + clientSocket.getInetAddress().getHostAddress());
-                // Przekazujemy referencję do serwera i managera lobby
-                pool.submit(new ClientHandler(clientSocket, dbManager, this, lobbyManager));
+            if (bialyHandler != null) bialyHandler.sendMessage(wiadomosc);
+            if (czarnyHandler != null) czarnyHandler.sendMessage(wiadomosc);
+
+            // Po wysłaniu aktualizacji planszy, sprawdź, czy gra się nie zakończyła
+            String gameOverMessage = gra.sprawdzStanGry();
+            if (gameOverMessage != null) {
+                if (bialyHandler != null) bialyHandler.sendMessage(gameOverMessage);
+                if (czarnyHandler != null) czarnyHandler.sendMessage(gameOverMessage);
+
+                // Usuń grę z aktywnych po jej zakończeniu
+                aktywneGry.remove(gameId);
+                graczDoGryId.remove(gra.getGraczBialyLogin());
+                graczDoGryId.remove(gra.getGraczCzarnyLogin());
             }
-        } catch (IOException e) {
-            System.err.println("[SERWER] Krytyczny błąd serwera: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
     public static void main(String[] args) {
+        UserDatabaseManager dbManager = new UserDatabaseManager();
         TestSerwer server = new TestSerwer();
-        server.startServer();
+        ExecutorService pool = Executors.newCachedThreadPool();
+
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("[SERWER] Serwer uruchomiony na porcie " + PORT);
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                pool.submit(new ClientHandler(clientSocket, dbManager, server, server.lobbyManager));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

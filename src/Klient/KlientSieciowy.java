@@ -2,6 +2,7 @@ package Klient;
 
 import javafx.application.Platform;
 import model.Uzytkownik;
+import utils.Pozycja;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,7 +26,9 @@ public class KlientSieciowy {
     private String pendingLoginUsername;
 
     private Consumer<List<String>> gameListUpdateCallback;
-    private Consumer<String> gameStartCallback;
+    private Consumer<Object[]> gameStartCallback;
+    private Consumer<String> boardUpdateCallback;
+    private Consumer<String> gameOverCallback; // Nowy callback
 
     public void connect() throws IOException {
         if (socket != null && !socket.isClosed()) return;
@@ -57,14 +60,14 @@ public class KlientSieciowy {
         return loginFuture;
     }
 
-    // ===== NOWA METODA =====
-    /**
-     * Wysyła do serwera prośbę o przesłanie aktualnej listy otwartych gier.
-     */
     public void refreshGamesList() {
         sendMessage("GET_GAMES_LIST");
     }
-    // ========================
+
+    public void sendMove(Pozycja start, Pozycja koniec) {
+        String message = String.format("MOVE:%d:%d:%d:%d", start.getRzad(), start.getKolumna(), koniec.getRzad(), koniec.getKolumna());
+        sendMessage(message);
+    }
 
     private void startListening() {
         if (listenerThread != null && listenerThread.isAlive()) return;
@@ -86,7 +89,7 @@ public class KlientSieciowy {
 
     private void processServerMessage(String message) {
         System.out.println("[KlientSieciowy-Listener] Przetwarzam: " + message);
-        String[] parts = message.split(":", 2);
+        String[] parts = message.split(":", 3);
         String command = parts[0];
 
         switch (command) {
@@ -107,8 +110,20 @@ public class KlientSieciowy {
                 }
                 break;
             case "GAME_START":
-                if (gameStartCallback != null && parts.length > 1) {
-                    gameStartCallback.accept(parts[1]);
+                if (gameStartCallback != null && parts.length == 3) {
+                    String opponentLogin = parts[1];
+                    model.enums.KolorFigur myColor = "WHITE".equals(parts[2]) ? model.enums.KolorFigur.WHITE : model.enums.KolorFigur.BLACK;
+                    gameStartCallback.accept(new Object[]{opponentLogin, myColor});
+                }
+                break;
+            case "UPDATE_BOARD":
+                if (boardUpdateCallback != null && parts.length > 1) {
+                    boardUpdateCallback.accept(parts[1]);
+                }
+                break;
+            case "GAME_OVER":
+                if (gameOverCallback != null && parts.length > 1) {
+                    gameOverCallback.accept(message.substring(command.length() + 1));
                 }
                 break;
             default:
@@ -119,9 +134,31 @@ public class KlientSieciowy {
 
     public Uzytkownik getCurrentUser() { return currentUser; }
     public void setOnGameListUpdate(Consumer<List<String>> callback) { this.gameListUpdateCallback = callback; }
-    public void setOnGameStart(Consumer<String> callback) { this.gameStartCallback = callback; }
+    public void setOnGameStart(Consumer<Object[]> callback) { this.gameStartCallback = callback; }
+    public void setOnBoardUpdate(Consumer<String> callback) { this.boardUpdateCallback = callback; }
+    public void setOnGameOver(Consumer<String> callback) { this.gameOverCallback = callback; }
     public void createGame() { sendMessage("CREATE_GAME"); }
     public void joinGame(String gameId) { sendMessage("JOIN_GAME:" + gameId); }
-    private void sendMessage(String message) { if (out != null) out.println(message); }
-    public void disconnect() { /* bez zmian */ }
+    private void sendMessage(String message) { if (out != null && !socket.isClosed()) out.println(message); }
+
+
+    public void disconnect() {
+        System.out.println("[KlientSieciowy] Rozłączanie...");
+        try {
+            if (listenerThread != null && listenerThread.isAlive()) {
+                listenerThread.interrupt();
+            }
+            if (in != null) in.close();
+            if (out != null) out.close();
+            if (socket != null) socket.close();
+        } catch (IOException e) {
+            System.err.println("[KlientSieciowy] Błąd podczas rozłączania: " + e.getMessage());
+        } finally {
+            socket = null;
+            in = null;
+            out = null;
+            currentUser = null;
+            System.out.println("[KlientSieciowy] Rozłączono.");
+        }
+    }
 }

@@ -23,6 +23,7 @@ public class KlientSieciowy {
     private Uzytkownik currentUser;
 
     private CompletableFuture<Boolean> loginFuture;
+    private CompletableFuture<String> registrationFuture;
     private String pendingLoginUsername;
 
     private Consumer<List<String>> gameListUpdateCallback;
@@ -59,6 +60,17 @@ public class KlientSieciowy {
 
         return loginFuture;
     }
+    public void logout() {
+        sendMessage("LOGOUT");
+        this.currentUser = null; // Wyczyść lokalne dane o użytkowniku
+        System.out.println("[KlientSieciowy] Wysłano żądanie wylogowania.");
+    }
+    public CompletableFuture<String> register(String username, String password) {
+        registrationFuture = new CompletableFuture<>();
+        sendMessage("REGISTER:" + username + ":" + password);
+        return registrationFuture;
+    }
+
 
     public void refreshGamesList() {
         sendMessage("GET_GAMES_LIST");
@@ -87,9 +99,12 @@ public class KlientSieciowy {
         System.out.println("[KlientSieciowy] Wątek nasłuchujący uruchomiony.");
     }
 
+
     private void processServerMessage(String message) {
         System.out.println("[KlientSieciowy-Listener] Przetwarzam: " + message);
-        String[] parts = message.split(":", 3);
+        // --- ZMIANA TUTAJ ---
+        // Dzielimy na 2 części: komendę i resztę wiadomości.
+        String[] parts = message.split(":", 2);
         String command = parts[0];
 
         switch (command) {
@@ -103,6 +118,15 @@ public class KlientSieciowy {
                 this.pendingLoginUsername = null;
                 if (loginFuture != null) loginFuture.complete(false);
                 break;
+
+            // --- NAJWAŻNIEJSZA ZMIANA JEST TUTAJ ---
+            case "REGISTER_RESULT":
+                if (registrationFuture != null) {
+                    // parts[1] będzie zawierać "SUCCESS" lub komunikat błędu od serwera
+                    registrationFuture.complete(parts[1]);
+                }
+                break;
+
             case "GAMES_LIST":
                 if (gameListUpdateCallback != null) {
                     String payload = (parts.length > 1) ? parts[1] : "";
@@ -110,9 +134,10 @@ public class KlientSieciowy {
                 }
                 break;
             case "GAME_START":
-                if (gameStartCallback != null && parts.length == 3) {
-                    String opponentLogin = parts[1];
-                    model.enums.KolorFigur myColor = "WHITE".equals(parts[2]) ? model.enums.KolorFigur.WHITE : model.enums.KolorFigur.BLACK;
+                if (gameStartCallback != null && parts.length > 1) {
+                    String[] gameData = parts[1].split(":");
+                    String opponentLogin = gameData[0];
+                    model.enums.KolorFigur myColor = "WHITE".equals(gameData[1]) ? model.enums.KolorFigur.WHITE : model.enums.KolorFigur.BLACK;
                     gameStartCallback.accept(new Object[]{opponentLogin, myColor});
                 }
                 break;
@@ -123,10 +148,11 @@ public class KlientSieciowy {
                 break;
             case "GAME_OVER":
                 if (gameOverCallback != null && parts.length > 1) {
-                    gameOverCallback.accept(message.substring(command.length() + 1));
+                    gameOverCallback.accept(parts[1]);
                 }
                 break;
             default:
+                // Ta linia nie powinna się już pojawiać dla komendy rejestracji
                 System.out.println("UI Thread: Otrzymano nieznaną komendę: " + message);
                 break;
         }

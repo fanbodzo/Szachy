@@ -15,5 +15,7 @@
       </ImageView>
       <Button fx:id="loginButton" layoutX="275.0" layoutY="325.0" mnemonicParsing="false" text="Zaloguj" textAlignment="CENTER" />
       <Label fx:id="errorLabel" layoutX="286.0" layoutY="208.0" />
+
+      <Hyperlink fx:id="registerLink" layoutX="220.0" layoutY="360.0" text="Nie masz konta? Zarejestruj się!" />
    </children>
 </Pane>

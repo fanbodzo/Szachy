@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="15.0" style="-fx-background-color: #404040;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="view.controlers.RegistrationViewController">
+    <children>
+        <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;" text="Utwórz nowe konto" />
+        <TextField fx:id="usernameField" maxWidth="250.0" promptText="Nazwa użytkownika" />
+        <PasswordField fx:id="passwordField" maxWidth="250.0" promptText="Hasło" />
+        <PasswordField fx:id="confirmPasswordField" maxWidth="250.0" promptText="Powtórz hasło" />
+        <Button fx:id="registerButton" mnemonicParsing="false" style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-font-weight: bold;" text="Zarejestruj" />
+        <Button fx:id="backToLoginButton" mnemonicParsing="false" style="-fx-background-color: #6c757d; -fx-text-fill: white;" text="Powrót do logowania" />
+        <Label fx:id="messageLabel" style="-fx-font-weight: bold;" textFill="#ff4d4d" />
+    </children>
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+</VBox>

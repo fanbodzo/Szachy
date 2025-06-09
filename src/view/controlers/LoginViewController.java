@@ -8,10 +8,7 @@ import gui.ViewManager;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
@@ -21,6 +18,7 @@ public class LoginViewController implements Initializable, KontrolerNawigator, K
     @FXML private PasswordField password;
     @FXML private Button loginButton;
     @FXML private Label errorLabel;
+    @FXML private Hyperlink registerLink;
 
     private Nawigator nawigator;
     private KlientSieciowy klientSieciowy;
@@ -33,6 +31,10 @@ public class LoginViewController implements Initializable, KontrolerNawigator, K
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         loginButton.setOnAction(event -> handleLogin());
+        registerLink.setOnAction(event -> handleGoToRegister());
+    }
+    private void handleGoToRegister() {
+        nawigator.nawigujDo(ViewManager.REJESTRACJA);
     }
 
     private void handleLogin() {
@@ -72,7 +74,7 @@ public class LoginViewController implements Initializable, KontrolerNawigator, K
             } else {
                 errorLabel.setText(loginTask.getMessage() != null ? loginTask.getMessage() : "Błędny login lub hasło.");
                 setUIState(false); // Odblokuj UI
-                klientSieciowy.disconnect(); // Rozłącz, aby następna próba była czysta
+                //klientSieciowy.disconnect(); // Rozłącz, aby następna próba była czysta
             }
         });
 

@@ -24,6 +24,7 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
     @FXML private ListView<String> gamesListView;
     @FXML private Label loginLabel;
     @FXML private Label dataRejestracjiLabel;
+    @FXML private Button logoutButton;
 
     private Nawigator nawigator;
     private KlientSieciowy klientSieciowy;
@@ -118,5 +119,16 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
             if (loginLabel != null) loginLabel.setText(zalogowanyUzytkownik.getLogin());
             if (dataRejestracjiLabel != null) dataRejestracjiLabel.setText("Brak danych");
         }
+    }
+    @FXML
+    private void handleLogout() {
+        // Powiadom serwer o wylogowaniu
+        if (klientSieciowy != null) {
+            klientSieciowy.logout();
+        }
+
+        // Użyj nawigatora, aby wrócić do ekranu logowania
+        // Dokładnie tak, jak jest to robione w LoginViewController po udanym logowaniu
+        nawigator.nawigujDo(ViewManager.LOGIN);
     }
 }

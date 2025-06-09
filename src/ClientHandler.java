@@ -73,6 +73,23 @@ public class ClientHandler implements Runnable {
                 }
                 break;
 
+            case "LOGOUT":
+                if (currentUserLogin != null) {
+                    System.out.println("[ClientHandler] Użytkownik " + currentUserLogin + " wylogowuje się.");
+                    // Usuwamy klienta z listy aktywnych na serwerze
+                    server.removeClient(currentUserLogin);
+                    // Resetujemy stan tego konkretnego handlera, aby nie był już powiązany z użytkownikiem
+                    this.currentUserLogin = null;
+                }
+                break;
+            case "REGISTER":
+                if (parts.length < 3) return;
+                String regLogin = parts[1];
+                String regPassword = parts[2];
+                String result = dbManager.registerUser(regLogin, regPassword);
+                sendMessage("REGISTER_RESULT:" + result);
+                break;
+
             case "CREATE_GAME":
                 if (currentUserLogin != null) {
                     lobbyManager.createGame(currentUserLogin);

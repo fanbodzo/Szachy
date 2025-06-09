@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
@@ -9,13 +10,14 @@
             <content>
                 <VBox alignment="TOP_CENTER" spacing="10" style="-fx-padding: 20;">
                     <children>
+                        <!-- NOWOŚĆ: HBox do grupowania przycisków -->
                         <HBox alignment="CENTER" spacing="20">
                             <children>
                                 <Button fx:id="createGameButton" mnemonicParsing="false" text="Utwórz nową grę" />
                                 <Button fx:id="refreshButton" mnemonicParsing="false" text="Odśwież listę" />
                             </children>
                         </HBox>
-                        <Label fx:id="otwarteGryLabel" style="-fx-font-weight: bold;" text="Otwarte gry (kliknij dwukrotnie, aby dołączyć):" />
+                        <Label text="Otwarte gry (kliknij dwukrotnie, aby dołączyć):" style="-fx-font-weight: bold; -fx-text-fill: #f51111;" />
                         <ListView fx:id="gamesListView" prefHeight="200.0" VBox.vgrow="ALWAYS" />
                     </children>
                 </VBox>
@@ -25,19 +27,21 @@
             <content>
                 <VBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 20;">
                     <children>
-                        <Label fx:id="informacjeKontoLabel" style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Informacje o koncie:" />
+                        <Label style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #f51111;" text="Informacje o koncie:" />
                         <HBox spacing="10">
                             <children>
-                                <Label fx:id="login2Label" style="-fx-font-weight: bold;" text="Login:" />
+                                <Label style="-fx-font-weight: bold;-fx-text-fill: #f51111;" text="Login:" />
                                 <Label fx:id="loginLabel" text="-" />
                             </children>
                         </HBox>
                         <HBox spacing="10">
                             <children>
-                                <Label fx:id="dataRLabel" style="-fx-font-weight: bold;" text="Data rejestracji:" />
+                                <Label style="-fx-font-weight: bold; -fx-text-fill: #f51111;" text="Data rejestracji:" />
                                 <Label fx:id="dataRejestracjiLabel" text="-" />
                             </children>
                         </HBox>
+                        <Button fx:id="logoutButton" onAction="#handleLogout" text="Wyloguj"
+                                style="-fx-background-color: #c82333; -fx-text-fill: white; -fx-font-weight: bold;"/>
                     </children>
                 </VBox>
             </content>

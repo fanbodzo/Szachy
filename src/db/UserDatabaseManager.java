@@ -115,10 +115,8 @@ public class UserDatabaseManager {
     // Metody do implementacji później (rejestracja, logowanie)
     // Na razie są to tylko puste szablony (placeholdery)
 
-    public boolean registerUser(String login, String plainPassword) {
+    public String registerUser(String login, String plainPassword) {
         System.out.println("INFO: Próba rejestracji użytkownika: " + login);
-        // Zgodnie z prośbą, na razie przechowujemy hasło jako zwykły tekst w kolumnie `haslo_hash`.
-        // W produkcyjnej aplikacji NALEŻY użyć algorytmu do hashowania (np. BCrypt).
         String sql = "INSERT INTO Uzytkownicy(login, haslo_hash) VALUES(?, ?)";
 
         try (Connection conn = getConnectionToDatabase();
@@ -130,18 +128,18 @@ public class UserDatabaseManager {
 
             if (affectedRows > 0) {
                 System.out.println("INFO: Użytkownik '" + login + "' został pomyślnie zarejestrowany.");
-                return true;
+                return "SUCCESS";
             } else {
-                return false;
+                return "Rejestracja nie powiodła się z nieznanego powodu.";
             }
         } catch (SQLException e) {
-            // Kod 1062 to błąd duplikatu klucza unikalnego (login już istnieje)
             if (e.getErrorCode() == 1062) {
                 System.err.println("BŁĄD REJESTRACJI: Użytkownik o loginie '" + login + "' już istnieje.");
+                return "Użytkownik o tej nazwie już istnieje.";
             } else {
                 System.err.println("BŁĄD REJESTRACJI: Problem SQL podczas rejestracji '" + login + "': " + e.getMessage());
+                return "Błąd serwera bazy danych.";
             }
-            return false;
         }
     }
 
@@ -212,32 +210,18 @@ public class UserDatabaseManager {
     private void createDefaultUserIfNeeded() {
         String defaultLogin = "admin";
         String defaultPassword = "admin";
-
-        // Zapytanie, które sprawdzi, czy użytkownik o danym loginie już istnieje
         String sqlCheckUser = "SELECT COUNT(*) AS user_count FROM Uzytkownicy WHERE login = ?";
-
-        try (Connection conn = getConnectionToDatabase();
-             PreparedStatement pstmt = conn.prepareStatement(sqlCheckUser)) {
-
+        try (Connection conn = getConnectionToDatabase(); PreparedStatement pstmt = conn.prepareStatement(sqlCheckUser)) {
             pstmt.setString(1, defaultLogin);
             ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                int userCount = rs.getInt("user_count");
-                if (userCount == 0) {
-                    // Jeśli nie ma takiego użytkownika, to go rejestrujemy
-                    System.out.println("INFO: Domyślny użytkownik '" + defaultLogin + "' nie istnieje. Tworzenie...");
-                    // Używamy naszej istniejącej metody registerUser!
-                    registerUser(defaultLogin, defaultPassword);
-                } else {
-                    // Jeśli użytkownik już jest w bazie, nic nie robimy
-                    System.out.println("INFO: Domyślny użytkownik '" + defaultLogin + "' już istnieje w bazie danych.");
-                }
+            if (rs.next() && rs.getInt("user_count") == 0) {
+                System.out.println("INFO: Tworzenie domyślnego użytkownika 'admin'...");
+                // Wywołujemy nową metodę, ignorując jej wynik, bo to tylko inicjalizacja
+                registerUser(defaultLogin, defaultPassword);
             }
-
         } catch (SQLException e) {
-            System.err.println("BŁĄD: Nie można było sprawdzić/utworzyć domyślnego użytkownika: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 }

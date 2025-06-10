@@ -22,7 +22,6 @@ import utils.KolorToCSS;
 import utils.Pozycja;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -46,6 +45,49 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
 
     private final StackPane[][] polaSzachownicy = new StackPane[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
     private final Region[][] ramkiPodswietlenia = new Region[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
+
+    // --- NOWOŚĆ: Metody do transformacji współrzędnych ---
+
+    /**
+     * Konwertuje współrzędne logiczne planszy (zawsze z perspektywy białych)
+     * na współrzędne wyświetlane na ekranie (GridPane).
+     * @param logicalPos Pozycja logiczna figury.
+     * @return Rząd do użycia w GridPane.
+     */
+    private int getDisplayRow(Pozycja logicalPos) {
+        if (mojKolor == KolorFigur.BLACK) {
+            return 7 - logicalPos.getRzad();
+        }
+        return logicalPos.getRzad();
+    }
+
+    /**
+     * Konwertuje współrzędne logiczne planszy na kolumnę wyświetlaną na ekranie.
+     * @param logicalPos Pozycja logiczna figury.
+     * @return Kolumna do użycia w GridPane.
+     */
+    private int getDisplayCol(Pozycja logicalPos) {
+        if (mojKolor == KolorFigur.BLACK) {
+            return 7 - logicalPos.getKolumna();
+        }
+        return logicalPos.getKolumna();
+    }
+
+    /**
+     * Konwertuje współrzędne kliknięte na ekranie (w GridPane) na
+     * współrzędne logiczne, które rozumie model gry i serwer.
+     * @param displayRow Kliknięty rząd na ekranie.
+     * @param displayCol Kliknięta kolumna na ekranie.
+     * @return Pozycja logiczna.
+     */
+    private Pozycja getLogicalPosition(int displayRow, int displayCol) {
+        if (mojKolor == KolorFigur.BLACK) {
+            return new Pozycja(7 - displayRow, 7 - displayCol);
+        } else {
+            return new Pozycja(displayRow, displayCol);
+        }
+    }
+
 
     @Override
     public void setKlientSieciowy(KlientSieciowy klient) {
@@ -79,12 +121,12 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
             this.mojKolor = (KolorFigur) dane[1];
 
             Platform.runLater(() -> {
-                opponentInfoLabel.setText("Grasz przeciwko: " + opponentLogin + ". Twój kolor: " + this.mojKolor);
+                opponentInfoLabel.setText("Grasz przeciwko: " + opponentLogin + ". Twój kolor: " + (this.mojKolor == KolorFigur.WHITE ? "Białe" : "Czarne"));
                 this.plansza = new Plansza();
                 this.plansza.ulozenieStandardoweFigur();
                 this.kogoTura = KolorFigur.WHITE;
                 this.graZakonczona = false;
-                odswiezCalaPlansze();
+                odswiezCalaPlansze(); // Ta metoda teraz uwzględni `mojKolor`
                 aktualizujTytulTury();
             });
         }
@@ -116,7 +158,8 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         }
     }
 
-    private void kliknieciePola(Pozycja kliknietePole) {
+    // ZMIANA: parametr to teraz pozycja LOGICZNA
+    private void kliknieciePola(Pozycja kliknietaPozycjaLogiczna) {
         if (graZakonczona) {
             System.out.println("[GraViewController] Kliknięcie zignorowane: gra zakończona.");
             return;
@@ -126,14 +169,14 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
             return;
         }
 
-        Figura figuraNaPolu = plansza.getFigura(kliknietePole);
+        Figura figuraNaPolu = plansza.getFigura(kliknietaPozycjaLogiczna);
 
-        if (zaznaczonaFigura != null && dostepneRuchy != null && dostepneRuchy.contains(kliknietePole)) {
-            System.out.println("[GraViewController] Wykonuję ruch: z " + zaznaczonaFigura.getPozycja() + " do " + kliknietePole);
-            klientSieciowy.sendMove(zaznaczonaFigura.getPozycja(), kliknietePole);
+        if (zaznaczonaFigura != null && dostepneRuchy != null && dostepneRuchy.contains(kliknietaPozycjaLogiczna)) {
+            System.out.println("[GraViewController] Wykonuję ruch: z " + zaznaczonaFigura.getPozycja() + " do " + kliknietaPozycjaLogiczna);
+            klientSieciowy.sendMove(zaznaczonaFigura.getPozycja(), kliknietaPozycjaLogiczna);
             odznaczWszystko();
         } else if (figuraNaPolu != null && figuraNaPolu.getKolorFigur() == mojKolor) {
-            System.out.println("[GraViewController] Zaznaczam figurę: " + figuraNaPolu.getTypFigury() + " na " + kliknietePole);
+            System.out.println("[GraViewController] Zaznaczam figurę: " + figuraNaPolu.getTypFigury() + " na " + kliknietaPozycjaLogiczna);
             zaznaczFigure(figuraNaPolu);
         } else {
             System.out.println("[GraViewController] Odznaczam wszystko.");
@@ -160,11 +203,7 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
                 wiadomosc = "Gra zakończona z nieznanego powodu.";
             }
 
-            // Najpierw pokaż okno z wynikiem
             pokazAlert(tytul, wiadomosc);
-
-            // ---> DODAJ TĘ LINIĘ <---
-            // Po zamknięciu okna, automatycznie wróć do menu
             nawigator.nawigujDo(ViewManager.STRONA_GLOWNA);
         });
     }
@@ -198,17 +237,25 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         odswiezCalaPlansze();
     }
 
+    // ZMIANA: Ta metoda teraz rysuje planszę z uwzględnieniem orientacji
     private void odswiezCalaPlansze() {
         if (plansza == null) return;
-        for (int r = 0; r < Plansza.ROZMIAR_PLANSZY; r++) {
-            for (int k = 0; k < Plansza.ROZMIAR_PLANSZY; k++) {
-                StackPane poleGUI = polaSzachownicy[r][k];
+        // Pętle iterują po współrzędnych WYŚWIETLANYCH (display)
+        for (int r_display = 0; r_display < Plansza.ROZMIAR_PLANSZY; r_display++) {
+            for (int k_display = 0; k_display < Plansza.ROZMIAR_PLANSZY; k_display++) {
+                StackPane poleGUI = polaSzachownicy[r_display][k_display];
                 if (poleGUI == null) continue;
+
                 poleGUI.getChildren().clear();
-                usunRamke(r, k);
-                Color currentcolor = ((r + k) % 2 == 0) ? Color.web("#F0D9B5") : Color.web("#B58863");
+                usunRamke(r_display, k_display);
+
+                Color currentcolor = ((r_display + k_display) % 2 == 0) ? Color.web("#F0D9B5") : Color.web("#B58863");
                 poleGUI.setStyle("-fx-background-color: " + KolorToCSS.toWebColor(currentcolor) + ";");
-                Figura f = plansza.getFigura(new Pozycja(r, k));
+
+                // Pobierz pozycję logiczną dla danego pola wyświetlanego
+                Pozycja logicalPos = getLogicalPosition(r_display, k_display);
+                Figura f = plansza.getFigura(logicalPos);
+
                 if (f != null) {
                     rysujSymbolFigury(poleGUI, f);
                 }
@@ -216,6 +263,7 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         }
     }
 
+    // ZMIANA: Logika kliknięcia musi transformować współrzędne
     private void utworzSzachowniceGUI() {
         szachownica.getChildren().clear();
         for (int i = 0; i < Plansza.ROZMIAR_PLANSZY; i++) {
@@ -223,9 +271,11 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
                 StackPane kwadrat = new StackPane();
                 szachownica.add(kwadrat, j, i);
                 polaSzachownicy[i][j] = kwadrat;
-                final int rzad = i;
-                final int kolumna = j;
-                kwadrat.setOnMouseClicked(event -> kliknieciePola(new Pozycja(rzad, kolumna)));
+                final int rzad_wyswietlany = i;
+                final int kolumna_wyswietlana = j;
+
+                // Przekazujemy do obsługi kliknięcia pozycję LOGICZNĄ
+                kwadrat.setOnMouseClicked(event -> kliknieciePola(getLogicalPosition(rzad_wyswietlany, kolumna_wyswietlana)));
             }
         }
     }
@@ -251,33 +301,42 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         }
     }
 
-    private void usunRamke(int r, int k) {
-        if (ramkiPodswietlenia[r][k] != null) {
-            polaSzachownicy[r][k].getChildren().remove(ramkiPodswietlenia[r][k]);
-            ramkiPodswietlenia[r][k] = null;
+    // ZMIANA: Metoda używa współrzędnych wyświetlanych
+    private void usunRamke(int r_display, int k_display) {
+        if (ramkiPodswietlenia[r_display][k_display] != null) {
+            polaSzachownicy[r_display][k_display].getChildren().remove(ramkiPodswietlenia[r_display][k_display]);
+            ramkiPodswietlenia[r_display][k_display] = null;
         }
     }
 
-    private void podswietlPole(Pozycja p, Color kolorRamki, String stylRamki) {
-        if (p != null && plansza.isValidPosition(p)) {
-            int r = p.getRzad();
-            int k = p.getKolumna();
-            usunRamke(r, k);
+    // ZMIANA: Metoda przyjmuje pozycję LOGICZNĄ, a rysuje na WYŚWIETLANEJ
+    private void podswietlPole(Pozycja p_logical, Color kolorRamki, String stylRamki) {
+        if (p_logical != null && plansza.isValidPosition(p_logical)) {
+            // Konwertuj pozycję logiczną na wyświetlaną
+            int r_display = getDisplayRow(p_logical);
+            int k_display = getDisplayCol(p_logical);
+
+            usunRamke(r_display, k_display);
             Region ramka = new Region();
             ramka.setStyle("-fx-border-color: " + KolorToCSS.toWebColor(kolorRamki) + ";" +
                     "-fx-border-width: 4px;" +
                     "-fx-border-style: " + stylRamki + ";");
             ramka.setMouseTransparent(true);
-            polaSzachownicy[r][k].getChildren().add(ramka);
-            ramkiPodswietlenia[r][k] = ramka;
+            polaSzachownicy[r_display][k_display].getChildren().add(ramka);
+            ramkiPodswietlenia[r_display][k_display] = ramka;
         }
     }
 
-    private void podswietlDostepnyRuch(Pozycja p) {
-        if (p != null && plansza.isValidPosition(p)) {
-            StackPane poleGUI = polaSzachownicy[p.getRzad()][p.getKolumna()];
-            if (plansza.getFigura(p) != null) {
-                podswietlPole(p, Color.DARKRED, "dashed");
+    // ZMIANA: Metoda przyjmuje pozycję LOGICZNĄ
+    private void podswietlDostepnyRuch(Pozycja p_logical) {
+        if (p_logical != null && plansza.isValidPosition(p_logical)) {
+            // Konwertuj pozycję logiczną na wyświetlaną, aby znaleźć odpowiedni StackPane
+            int r_display = getDisplayRow(p_logical);
+            int k_display = getDisplayCol(p_logical);
+            StackPane poleGUI = polaSzachownicy[r_display][k_display];
+
+            if (plansza.getFigura(p_logical) != null) {
+                podswietlPole(p_logical, Color.DARKRED, "dashed");
             } else {
                 Label kropka = new Label("●");
                 kropka.styleProperty().bind(Bindings.createStringBinding(() -> {

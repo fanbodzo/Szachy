@@ -125,6 +125,21 @@ public class Plansza {
         }
         return null;
     }
+    public void promujPionka(Pozycja pozycja, TypFigury nowyTyp) {
+        Figura pionek = getFigura(pozycja);
+        if (pionek == null || pionek.getTypFigury() != TypFigury.PION) {
+            System.err.println("BŁĄD: Próba promocji na polu bez piona: " + pozycja);
+            return;
+        }
+
+        if (nowyTyp == TypFigury.PION || nowyTyp == TypFigury.KROL) {
+            System.err.println("BŁĄD: Niedozwolony typ promocji: " + nowyTyp);
+            return;
+        }
+        KolorFigur kolor = pionek.getKolorFigur();
+        Figura nowaFigura = FabrykaFigur.utworzFigure(nowyTyp, kolor);
+        setFigura(pozycja, nowaFigura);
+    }
 
     public boolean czyPoleJestAtakowane(Pozycja p, KolorFigur kolorAtakujacego) {
         for (int r = 0; r < ROZMIAR_PLANSZY; r++) {

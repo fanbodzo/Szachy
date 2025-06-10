@@ -1,7 +1,11 @@
 package model;
 
 import model.enums.KolorFigur;
+import model.enums.TypFigury;
 import model.rdzen.Plansza;
+import model.figury.Figura;
+import model.figury.Pion;
+
 import utils.Pozycja;
 
 public class AktywnaGra {
@@ -60,7 +64,17 @@ public class AktywnaGra {
         }
 
         if (plansza.czyRuchJestLegalny(start, koniec, kolorGracza)) {
+            Figura ruszanaFigura = plansza.getFigura(start);
             plansza.wykonajRuch(start, koniec);
+            boolean isPromotion = (ruszanaFigura.getTypFigury() == TypFigury.PION) &&
+                    (koniec.getRzad() == 0 || koniec.getRzad() == 7);
+
+            if (isPromotion) {
+                // Automatycznie promuj na HETMANA
+                plansza.promujPionka(koniec, TypFigury.HETMAN);
+                System.out.println("[Gra] Wykryto automatyczną promocję piona na Hetmana.");
+            }
+
             kogoTura = (kogoTura == KolorFigur.WHITE) ? KolorFigur.BLACK : KolorFigur.WHITE;
             System.out.println("[Gra] Ruch gracza " + loginGracza + " wykonany. Następna tura: " + kogoTura);
             return true;

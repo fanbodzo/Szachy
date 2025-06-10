@@ -82,6 +82,9 @@ public class KlientSieciowy {
         String message = String.format("MOVE:%d:%d:%d:%d", start.getRzad(), start.getKolumna(), koniec.getRzad(), koniec.getKolumna());
         sendMessage(message);
     }
+    public void resignGame() {
+        sendMessage("RESIGN");
+    }
 
     private void startListening() {
         if (listenerThread != null && listenerThread.isAlive()) return;

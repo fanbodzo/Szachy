@@ -20,6 +20,7 @@ import model.figury.Figura;
 import model.rdzen.Plansza;
 import utils.KolorToCSS;
 import utils.Pozycja;
+import javafx.scene.control.ButtonType;
 
 import java.net.URL;
 import java.util.List;
@@ -42,6 +43,7 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
     private Figura zaznaczonaFigura;
     private List<Pozycja> dostepneRuchy;
     private boolean graZakonczona = false;
+    private String opponentLogin;
 
     private final StackPane[][] polaSzachownicy = new StackPane[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
     private final Region[][] ramkiPodswietlenia = new Region[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
@@ -107,26 +109,37 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
     public void initialize(URL location, ResourceBundle resources) {
         utworzSzachowniceGUI();
         ustawResponsywnoscSzachownicy();
+
         cofnijButton.setOnAction(e -> {
-            if (this.nawigator != null) {
-                this.nawigator.nawigujDo(ViewManager.STRONA_GLOWNA);
-            }
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION, "Czy na pewno chcesz poddać partię? Spowoduje to Twoją przegraną.", ButtonType.YES, ButtonType.NO);
+            confirmAlert.setTitle("Poddanie partii");
+            confirmAlert.setHeaderText(null);
+
+            confirmAlert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.YES) {
+                    if (klientSieciowy != null && !graZakonczona) {
+                        System.out.println("[GraViewController] Gracz poddaje partię. Wysyłam RESIGN.");
+                        klientSieciowy.resignGame();
+                    }
+                }
+            });
         });
     }
 
     @Override
     public void przekazDaneGry(Object... dane) {
         if (dane.length == 2 && dane[0] instanceof String && dane[1] instanceof KolorFigur) {
-            String opponentLogin = (String) dane[0];
+
+            this.opponentLogin = (String) dane[0];
             this.mojKolor = (KolorFigur) dane[1];
 
             Platform.runLater(() -> {
-                opponentInfoLabel.setText("Grasz przeciwko: " + opponentLogin + ". Twój kolor: " + (this.mojKolor == KolorFigur.WHITE ? "Białe" : "Czarne"));
+                opponentInfoLabel.setText("Grasz przeciwko: " + this.opponentLogin + ". Twój kolor: " + (this.mojKolor == KolorFigur.WHITE ? "Białe" : "Czarne"));
                 this.plansza = new Plansza();
                 this.plansza.ulozenieStandardoweFigur();
                 this.kogoTura = KolorFigur.WHITE;
                 this.graZakonczona = false;
-                odswiezCalaPlansze(); // Ta metoda teraz uwzględni `mojKolor`
+                odswiezCalaPlansze();
                 aktualizujTytulTury();
             });
         }
@@ -199,6 +212,14 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
             } else if (parts[0].equals("STALEMATE")) {
                 tytul = "Pat!";
                 wiadomosc = "Gra zakończona remisem.";
+            } else if (parts[0].equals("RESIGNATION")) {
+                String ktoWygral = parts[1];
+                tytul = "Poddanie partii";
+                if (ktoWygral.equals(klientSieciowy.getCurrentUser().getLogin())) {
+                    wiadomosc = "Przeciwnik poddał partię. Gratulacje, wygrałeś!";
+                } else {
+                    wiadomosc = "Poddałeś partię. Wygrywa: " + ktoWygral;
+                }
             } else {
                 wiadomosc = "Gra zakończona z nieznanego powodu.";
             }

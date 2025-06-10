@@ -142,6 +142,11 @@ public class ClientHandler implements Runnable {
                     }
                 }
                 break;
+            case "RESIGN":
+                if (currentUserLogin != null) {
+                    server.obsluzPoddanieGry(currentUserLogin);
+                }
+                break;
 
             default:
                 sendMessage("ERROR:UNKNOWN_COMMAND");

@@ -113,23 +113,29 @@ public class UserDatabaseManager {
 
     public synchronized void zaktualizujEloIZapiszGre(AktywnaGra gra, String gameOverMessage) {
         String[] parts = gameOverMessage.split(":");
-        String wynikTyp = parts[1];
+        String wynikTyp = parts[1]; // np. CHECKMATE, STALEMATE, RESIGNATION
         String graczBialyLogin = gra.getGraczBialyLogin();
         String graczCzarnyLogin = gra.getGraczCzarnyLogin();
 
         Integer ktoWygralId = null;
 
-        if (wynikTyp.equals("CHECKMATE")) {
+        // ZMIANA: Obsługujemy zarówno mata, jak i poddanie partii
+        if (wynikTyp.equals("CHECKMATE") || wynikTyp.equals("RESIGNATION")) {
             String wygranyLogin = parts[2];
             ktoWygralId = getIdUzytkownika(wygranyLogin);
-            if (wygranyLogin.equals(graczBialyLogin)) {
-                zmienElo(graczBialyLogin, 20);
-                zmienElo(graczCzarnyLogin, -20);
-            } else {
-                zmienElo(graczBialyLogin, -20);
-                zmienElo(graczCzarnyLogin, 20);
+
+            // Logika zmiany ELO jest taka sama w obu przypadkach
+            if (ktoWygralId != null) {
+                if (wygranyLogin.equals(graczBialyLogin)) {
+                    zmienElo(graczBialyLogin, 20);
+                    zmienElo(graczCzarnyLogin, -20);
+                } else {
+                    zmienElo(graczBialyLogin, -20);
+                    zmienElo(graczCzarnyLogin, 20);
+                }
             }
         }
+        // STALEMATE (remis) nie zmienia ELO, więc nie ma tu dla niego bloku `if`
 
         // Zapisz do historii BEZ ELO
         zapiszGreDoHistorii(getIdUzytkownika(graczBialyLogin), getIdUzytkownika(graczCzarnyLogin), ktoWygralId);

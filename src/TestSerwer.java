@@ -53,6 +53,39 @@ public class TestSerwer {
             czarnyHandler.sendMessage("GAME_START:" + nowaGra.getGraczBialyLogin() + ":BLACK");
         }
     }
+    public void obsluzPoddanieGry(String resigningPlayerLogin) {
+        String gameId = graczDoGryId.get(resigningPlayerLogin);
+        if (gameId == null) return;
+
+        AktywnaGra gra = aktywneGry.get(gameId);
+
+        if (gra == null || gra.isGraZakonczona()) return;
+
+
+        String winnerLogin = gra.getGraczBialyLogin().equals(resigningPlayerLogin)
+                ? gra.getGraczCzarnyLogin()
+                : gra.getGraczBialyLogin();
+
+        System.out.println("[SERWER] Gracz " + resigningPlayerLogin + " poddał grę. Wygrywa " + winnerLogin);
+
+
+        String gameOverMessage = "GAME_OVER:RESIGNATION:" + winnerLogin;
+
+
+        dbManager.zaktualizujEloIZapiszGre(gra, gameOverMessage);
+
+
+        ClientHandler bialyHandler = activeClients.get(gra.getGraczBialyLogin());
+        ClientHandler czarnyHandler = activeClients.get(gra.getGraczCzarnyLogin());
+
+        if (bialyHandler != null) bialyHandler.sendMessage(gameOverMessage);
+        if (czarnyHandler != null) czarnyHandler.sendMessage(gameOverMessage);
+
+
+        aktywneGry.remove(gameId);
+        graczDoGryId.remove(gra.getGraczBialyLogin());
+        graczDoGryId.remove(gra.getGraczCzarnyLogin());
+    }
 
     public void obsluzRuch(String loginGracza, Pozycja start, Pozycja koniec) {
         String gameId = graczDoGryId.get(loginGracza);

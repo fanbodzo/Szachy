@@ -29,7 +29,9 @@ public class KlientSieciowy {
     private Consumer<List<String>> gameListUpdateCallback;
     private Consumer<Object[]> gameStartCallback;
     private Consumer<String> boardUpdateCallback;
-    private Consumer<String> gameOverCallback; // Nowy callback
+    private Consumer<String> gameOverCallback;
+    private Consumer<List<String>> historyUpdateCallback;
+    private Consumer<List<String>> leaderboardUpdateCallback; // Nowy callback
 
     public void connect() throws IOException {
         if (socket != null && !socket.isClosed()) return;
@@ -109,7 +111,12 @@ public class KlientSieciowy {
 
         switch (command) {
             case "LOGIN_SUCCESS":
+
+                String dataRejestracji = (parts.length > 1) ? parts[1] : "Brak danych";
+
                 this.currentUser = new Uzytkownik(pendingLoginUsername);
+                this.currentUser.setDataRejestracji(dataRejestracji);
+
                 this.pendingLoginUsername = null;
                 if (loginFuture != null) loginFuture.complete(true);
                 break;
@@ -151,6 +158,18 @@ public class KlientSieciowy {
                     gameOverCallback.accept(parts[1]);
                 }
                 break;
+            case "LEADERBOARD_DATA":
+                if (leaderboardUpdateCallback != null) {
+                    String payload = (parts.length > 1) ? parts[1] : "";
+                    leaderboardUpdateCallback.accept(List.of(payload.split(";")));
+                }
+                break;
+            case "HISTORY_DATA":
+                if (historyUpdateCallback != null) {
+                    String payload = (parts.length > 1) ? parts[1] : "";
+                    historyUpdateCallback.accept(List.of(payload.split("\\|")));
+                }
+                break;
             default:
                 // Ta linia nie powinna się już pojawiać dla komendy rejestracji
                 System.out.println("UI Thread: Otrzymano nieznaną komendę: " + message);
@@ -163,8 +182,13 @@ public class KlientSieciowy {
     public void setOnGameStart(Consumer<Object[]> callback) { this.gameStartCallback = callback; }
     public void setOnBoardUpdate(Consumer<String> callback) { this.boardUpdateCallback = callback; }
     public void setOnGameOver(Consumer<String> callback) { this.gameOverCallback = callback; }
+    public void setOnHistoryUpdate(Consumer<List<String>> callback) { this.historyUpdateCallback = callback; }
+    public void setOnLeaderboardUpdate(Consumer<List<String>> callback) { this.leaderboardUpdateCallback = callback; }
+
     public void createGame() { sendMessage("CREATE_GAME"); }
     public void joinGame(String gameId) { sendMessage("JOIN_GAME:" + gameId); }
+    public void requestHistory() { sendMessage("GET_HISTORY"); }
+    public void requestLeaderboard() { sendMessage("GET_LEADERBOARD"); }
     private void sendMessage(String message) { if (out != null && !socket.isClosed()) out.println(message); }
 
 

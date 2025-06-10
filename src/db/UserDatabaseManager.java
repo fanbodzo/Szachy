@@ -125,7 +125,7 @@ public class UserDatabaseManager {
             ktoWygralId = getIdUzytkownika(wygranyLogin);
 
             // Logika zmiany ELO jest taka sama w obu przypadkach
-            if (ktoWygralId != null) {
+            if (ktoWygralId != -1) {
                 if (wygranyLogin.equals(graczBialyLogin)) {
                     zmienElo(graczBialyLogin, 20);
                     zmienElo(graczCzarnyLogin, -20);

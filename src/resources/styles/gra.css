@@ -1,6 +1,4 @@
-/* src/main/resources/styles/gra.css */
-/* nazwy po "#" musza byc nazwami elementow z plikow .fxml"*/
-/* sekcja od okna loginView */
+
 #bg{
     -fx-background-color: #123123;
 }
@@ -10,89 +8,71 @@
     -fx-text-fill: #000000;
     -fx-font-weight: bold;
 }
-#loginButton{
-    -fx-background-color: #007e0e;
-    -fx-text-fill: #000000;
-    -fx-font-weight: bold;
-    -fx-border-color: #000000;
-    -fx-border-width: 2;
-}
-#loginButton:pressed{
-    -fx-background-color: #321321;
-    -fx-text-fill: #ffffff;
-}
 
 #username{
     -fx-background-color: #878787;
     -fx-text-fill: #000000;
     -fx-font-weight: bold;
 }
-/* sekcja od okna glownaStronaView */
-#bg{
-    -fx-background-color: #123123;
+#errorLabel{
+    -fx-text-fill: #ed1616;
 }
-#grajButton{
-    -fx-background-color: #007e0e;
-    -fx-text-fill: #000000;
-    -fx-font-weight: bold;
-    -fx-border-color: #bfbfbf;
-    -fx-border-width: 2;
-}
-#grajButton:pressed{
-    -fx-background-color: #321321;
-    -fx-text-fill: #ffffff;
-}
+
 #loginLabel{
     -fx-font-size: 14px;
     -fx-text-fill: #fc7703;
 
 }
-
 #dataRejestracjiLabel{
     -fx-font-size: 14px;
     -fx-text-fill: #fc7703;
 
 }
-
-/* sekcja od okna graView */
-#tlo {
-    -fx-background-color: #404040;
+.ListView{
+    -fx-background-color: #226326;
 }
-
-/*moze byc problem jak wieksozc buttonow beidze nazywalo sie cofnij bo kazdy bedzie miec ten sam styl
-ale to git chyba
- */
-#cofnijButton{
-    -fx-background-color: #4e4e4e;
+.button{
+    -fx-background-color: #007e3b;
     -fx-text-fill: #000000;
     -fx-font-weight: bold;
-    -fx-border-color: #8f8f8f;
-    -fx-border-width: 2;
 }
-#cofnijButton:pressed{
+.button:pressed{
     -fx-background-color: #321321;
     -fx-text-fill: #ffffff;
 }
-
-
-#lewo, #prawo, #gora, #dol {
+#stronaGlowna{
+    -fx-background-color: #007e3b;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+}
+#ranking{
+    -fx-background-color: #007e3b;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+}
+#konto{
+    -fx-background-color: #007e3b;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+}
+#konto:pressed{
+    -fx-background-color: #321321;
+    -fx-text-fill: #ffffff;
+}
+#stronaGlowna:pressed{
+    -fx-background-color: #321321;
+    -fx-text-fill: #ffffff;
+}
+#ranking:pressed{
+    -fx-background-color: #321321;
+    -fx-text-fill: #ffffff;
+}
+#lewo, #prawo, #gora, #dol, #tlo {
     -fx-background-color: #606060;
 }
-
-
 #szachownica {
     -fx-border-color: black;
     -fx-border-width: 2px;
     -fx-padding: 5px;
 }
 
-
-/*.label-figury-czarne {*/
-/*    -fx-font-weight: bold;*/
-/*    -fx-text-fill: #ff8484;*/
-/*}*/
-
-/*.label-figury-biale {*/
-/*    -fx-font-weight: bold;*/
-/*    -fx-text-fill: #6e81ea;*/
-/*}*/

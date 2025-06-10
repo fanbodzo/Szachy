@@ -4,18 +4,18 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 
-<Pane fx:id="bg" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="view.controlers.LoginViewController">
+<Pane fx:id="bg" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="view.controlers.LoginViewController">
    <children>
-      <PasswordField fx:id="password" layoutX="226.0" layoutY="272.0" promptText="Haslo" />
-      <TextField fx:id="username" layoutX="226.0" layoutY="237.0" promptText="Nazwa Uzytwkownika" />
-      <ImageView fx:id="ikona" fitHeight="200.0" fitWidth="250.0" layoutX="201.0" layoutY="25.0" pickOnBounds="true" preserveRatio="true">
+      <TextField fx:id="username" layoutX="325.0" layoutY="333.0" promptText="Nazwa Uzytwkownika" />
+      <PasswordField fx:id="password" layoutX="325.0" layoutY="368.0" promptText="Haslo" />
+      <Button fx:id="loginButton" layoutX="374.0" layoutY="421.0" mnemonicParsing="false" text="Zaloguj" textAlignment="CENTER" />
+      <ImageView fx:id="ikona" fitHeight="200.0" fitWidth="250.0" layoutX="300.0" layoutY="121.0" pickOnBounds="true" preserveRatio="true">
          <image>
             <Image url="@images/chess.png" />
          </image>
       </ImageView>
-      <Button fx:id="loginButton" layoutX="275.0" layoutY="325.0" mnemonicParsing="false" text="Zaloguj" textAlignment="CENTER" />
-      <Label fx:id="errorLabel" layoutX="286.0" layoutY="208.0" />
+      <Label fx:id="errorLabel" layoutX="329.0" layoutY="304.0" prefHeight="17.0" prefWidth="149.0" textOverrun="CENTER_ELLIPSIS" />
 
-      <Hyperlink fx:id="registerLink" layoutX="220.0" layoutY="360.0" text="Nie masz konta? Zarejestruj się!" />
+      <Hyperlink fx:id="registerLink" layoutX="319.0" layoutY="456.0" text="Nie masz konta? Zarejestruj się!" />
    </children>
 </Pane>

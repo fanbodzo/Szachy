@@ -34,6 +34,7 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
     @FXML private Pane dol;
     @FXML private Label opponentInfoLabel;
     @FXML private Button cofnijButton;
+    @FXML private StackPane kontenerSzachownicy;
 
     private Nawigator nawigator;
     private KlientSieciowy klientSieciowy;

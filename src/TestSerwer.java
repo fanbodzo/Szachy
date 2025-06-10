@@ -15,10 +15,13 @@ public class TestSerwer {
     public static final int PORT = 4999;
     private final Map<String, ClientHandler> activeClients = new ConcurrentHashMap<>();
     private final GameLobbyManager lobbyManager = new GameLobbyManager(this);
-
+    private final UserDatabaseManager dbManager;
     private final Map<String, AktywnaGra> aktywneGry = new ConcurrentHashMap<>();
     private final Map<String, String> graczDoGryId = new ConcurrentHashMap<>();
 
+    public TestSerwer(UserDatabaseManager dbManager) {
+        this.dbManager = dbManager;
+    }
     public void addClient(String login, ClientHandler handler) {
         activeClients.put(login, handler);
     }
@@ -59,7 +62,6 @@ public class TestSerwer {
         if (gra == null) return;
 
         if (gra.wykonajRuch(loginGracza, start, koniec)) {
-            // Ruch był legalny, roześlij nowy stan planszy
             String stanPlanszy = gra.getPlansza().doZapisuString();
             String wiadomosc = "UPDATE_BOARD:" + stanPlanszy;
 
@@ -69,13 +71,14 @@ public class TestSerwer {
             if (bialyHandler != null) bialyHandler.sendMessage(wiadomosc);
             if (czarnyHandler != null) czarnyHandler.sendMessage(wiadomosc);
 
-            // Po wysłaniu aktualizacji planszy, sprawdź, czy gra się nie zakończyła
             String gameOverMessage = gra.sprawdzStanGry();
             if (gameOverMessage != null) {
                 if (bialyHandler != null) bialyHandler.sendMessage(gameOverMessage);
                 if (czarnyHandler != null) czarnyHandler.sendMessage(gameOverMessage);
 
-                // Usuń grę z aktywnych po jej zakończeniu
+                // ---> KLUCZOWA ZMIANA <---
+                dbManager.zaktualizujEloIZapiszGre(gra, gameOverMessage);
+
                 aktywneGry.remove(gameId);
                 graczDoGryId.remove(gra.getGraczBialyLogin());
                 graczDoGryId.remove(gra.getGraczCzarnyLogin());
@@ -85,7 +88,8 @@ public class TestSerwer {
 
     public static void main(String[] args) {
         UserDatabaseManager dbManager = new UserDatabaseManager();
-        TestSerwer server = new TestSerwer();
+
+        TestSerwer server = new TestSerwer(dbManager);
         ExecutorService pool = Executors.newCachedThreadPool();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {

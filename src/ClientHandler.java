@@ -1,4 +1,5 @@
 import db.UserDatabaseManager;
+import model.Uzytkownik;
 import utils.Pozycja;
 
 import java.io.BufferedReader;
@@ -7,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.List;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
@@ -62,11 +64,18 @@ public class ClientHandler implements Runnable {
                 if (parts.length < 3) return;
                 String login = parts[1];
                 String password = parts[2];
-                boolean isLoggedIn = dbManager.loginUser(login, password);
-                if (isLoggedIn) {
-                    this.currentUserLogin = login;
-                    server.addClient(login, this);
-                    sendMessage("LOGIN_SUCCESS");
+
+                Uzytkownik user = dbManager.loginUser(login, password);
+
+                if (user != null) {
+                    this.currentUserLogin = user.getLogin();
+                    server.addClient(user.getLogin(), this);
+
+
+
+
+                    sendMessage("LOGIN_SUCCESS:" + user.getDataRejestracji());
+
                     lobbyManager.broadcastOpenGames();
                 } else {
                     sendMessage("LOGIN_FAILURE");
@@ -106,6 +115,18 @@ public class ClientHandler implements Runnable {
             case "GET_GAMES_LIST":
                 String payload = lobbyManager.getGamesListPayload();
                 sendMessage("GAMES_LIST:" + payload);
+                break;
+            case "GET_LEADERBOARD":
+                List<String> leaderboard = dbManager.getLeaderboard();
+                sendMessage("LEADERBOARD_DATA:" + String.join(";", leaderboard));
+                break;
+
+            case "GET_HISTORY":
+                if (currentUserLogin != null) {
+                    List<String> history = dbManager.getMatchHistory(currentUserLogin);
+                    // ZMIANA: Używamy "|" do łączenia gier, a nie ";"
+                    sendMessage("HISTORY_DATA:" + String.join("|", history));
+                }
                 break;
 
             case "MOVE":

@@ -21,14 +21,23 @@ import java.util.stream.Collectors;
 public class GlownaStronaViewController implements Initializable, KontrolerNawigator, KontrolerKlienta {
     @FXML private Button createGameButton;
     @FXML private Button refreshButton;
+    @FXML private Button logoutButton;
+    @FXML private Button refreshLeaderboardButton;
     @FXML private ListView<String> gamesListView;
+    @FXML private ListView<String> historyListView;
+    @FXML private ListView<String> leaderboardListView;
     @FXML private Label loginLabel;
     @FXML private Label dataRejestracjiLabel;
-    @FXML private Button logoutButton;
+    @FXML private Label eloLabel;
+
 
     private Nawigator nawigator;
     private KlientSieciowy klientSieciowy;
+
     private ObservableList<String> openGamesData = FXCollections.observableArrayList();
+    private ObservableList<String> historyData = FXCollections.observableArrayList();
+    private ObservableList<String> leaderboardData = FXCollections.observableArrayList();
+
     private java.util.Map<String, String> gameDisplayToIdMap = new java.util.HashMap<>();
 
 
@@ -43,6 +52,10 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
                 // data[0] to login przeciwnika, data[1] to nasz kolor
                 nawigator.nawigujDo(ViewManager.GRA, data[0], data[1]);
             }));
+            klientSieciowy.setOnHistoryUpdate(this::updateHistory);
+            klientSieciowy.setOnLeaderboardUpdate(this::updateLeaderboard);
+            klientSieciowy.requestHistory();
+            klientSieciowy.requestLeaderboard();
         }
     }
 
@@ -53,21 +66,24 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        createGameButton.setOnAction(event -> {
-            if (klientSieciowy != null) {
-                klientSieciowy.createGame();
-                createGameButton.setDisable(true);
-            }
-        });
-
-        refreshButton.setOnAction(event -> {
-            if (klientSieciowy != null) {
-                klientSieciowy.refreshGamesList();
-            }
-        });
-
+        // Powiązanie list z danymi
         gamesListView.setItems(openGamesData);
+        historyListView.setItems(historyData);
+        leaderboardListView.setItems(leaderboardData);
 
+        // Ustawienie akcji dla wszystkich przycisków
+        createGameButton.setOnAction(e -> {
+            if (klientSieciowy != null) klientSieciowy.createGame();
+        });
+        refreshButton.setOnAction(e -> {
+            if (klientSieciowy != null) klientSieciowy.refreshGamesList();
+        });
+        logoutButton.setOnAction(e -> handleLogout()); // Prawdopodobnie już to masz, upewnij się
+        refreshLeaderboardButton.setOnAction(e -> {
+            if (klientSieciowy != null) klientSieciowy.requestLeaderboard();
+        });
+
+        // Ustawienie akcji dołączania do gry
         gamesListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 String selectedItem = gamesListView.getSelectionModel().getSelectedItem();
@@ -77,6 +93,45 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
                         klientSieciowy.joinGame(gameId);
                     }
                 }
+            }
+        });
+    }
+    private void updateLeaderboard(List<String> data) {
+        Platform.runLater(() -> {
+            leaderboardData.clear();
+            if (data.isEmpty() || (data.size() == 1 && data.get(0).isEmpty())) {
+                leaderboardData.add("Ranking jest pusty.");
+                return;
+            }
+            int rank = 1;
+            for (String item : data) {
+                String[] parts = item.split(",");
+                if (parts.length < 2) continue;
+                leaderboardData.add(String.format("%d. %-20s ELO: %s", rank++, parts[0], parts[1]));
+                // Aktualizuj ELO zalogowanego gracza w zakładce "Konto"
+                if(klientSieciowy != null && klientSieciowy.getCurrentUser() != null && klientSieciowy.getCurrentUser().getLogin().equals(parts[0])){
+                    eloLabel.setText("Twoje ELO: " + parts[1]);
+                }
+            }
+        });
+    }
+
+    private void updateHistory(List<String> data) {
+        Platform.runLater(() -> {
+            historyData.clear();
+            if (data.isEmpty() || (data.size() == 1 && data.get(0).isEmpty())) {
+                historyData.add("Brak historii gier.");
+                return;
+            }
+
+            // Ta pętla teraz będzie działać poprawnie
+            for (String item : data) {
+                // Każdy "item" to teraz kompletna gra, np. "2025-06-10 20:42;admin;Przegrana"
+                String[] parts = item.split(";");
+                if (parts.length < 3) continue; // Zabezpieczenie
+
+                // Formatujemy dane do jednej linii
+                historyData.add(String.format("%s | vs %-15s | Wynik: %s", parts[0], parts[1], parts[2]));
             }
         });
     }
@@ -116,8 +171,23 @@ public class GlownaStronaViewController implements Initializable, KontrolerNawig
     private void wypelnijDaneKonta() {
         if (klientSieciowy != null && klientSieciowy.getCurrentUser() != null) {
             Uzytkownik zalogowanyUzytkownik = klientSieciowy.getCurrentUser();
-            if (loginLabel != null) loginLabel.setText(zalogowanyUzytkownik.getLogin());
-            if (dataRejestracjiLabel != null) dataRejestracjiLabel.setText("Brak danych");
+
+            if (loginLabel != null) {
+                loginLabel.setText(zalogowanyUzytkownik.getLogin());
+            }
+
+            if (dataRejestracjiLabel != null) {
+                String rawDate = zalogowanyUzytkownik.getDataRejestracji();
+                if (rawDate != null && !rawDate.equals("Brak danych")) {
+                    // Usuwamy część z milisekundami (.0) dla lepszego wyglądu
+                    if (rawDate.endsWith(".0")) {
+                        rawDate = rawDate.substring(0, rawDate.length() - 2);
+                    }
+                    dataRejestracjiLabel.setText(rawDate);
+                } else {
+                    dataRejestracjiLabel.setText("Brak danych");
+                }
+            }
         }
     }
     @FXML

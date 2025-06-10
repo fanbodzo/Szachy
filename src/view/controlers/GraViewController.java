@@ -160,7 +160,12 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
                 wiadomosc = "Gra zakończona z nieznanego powodu.";
             }
 
+            // Najpierw pokaż okno z wynikiem
             pokazAlert(tytul, wiadomosc);
+
+            // ---> DODAJ TĘ LINIĘ <---
+            // Po zamknięciu okna, automatycznie wróć do menu
+            nawigator.nawigujDo(ViewManager.STRONA_GLOWNA);
         });
     }
 

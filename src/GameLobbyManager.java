@@ -32,7 +32,7 @@ public class GameLobbyManager {
             openGames.remove(gameId);
             System.out.println("[LOBBY] Gracz " + joiningPlayerLogin + " dołączył do gry gracza " + game.getHostPlayerLogin());
 
-            // ZMIANA: Zamiast informować graczy, prosimy serwer o rozpoczęcie gry.
+            // serwer rozpocznie gre.
             // Serwer zajmie się losowaniem kolorów i stworzeniem obiektu gry.
             server.rozpocznijGre(game.getHostPlayerLogin(), joiningPlayerLogin);
 

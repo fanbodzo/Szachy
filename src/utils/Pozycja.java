@@ -24,7 +24,6 @@ public class Pozycja {
         return "(" + rzad + "," + kolumna + ")";
     }
 
-    // --- NOWY, KLUCZOWY FRAGMENT ---
 
     @Override
     public boolean equals(Object o) {
@@ -41,8 +40,6 @@ public class Pozycja {
     @Override
     public int hashCode() {
         // Generowanie unikalnego kodu hash na podstawie wartości pól.
-        // Jest to wymagane, gdy nadpisujemy equals(), dla poprawnego działania
-        // struktur danych takich jak HashMap czy HashSet.
         return Objects.hash(rzad, kolumna);
     }
 }

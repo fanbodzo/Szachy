@@ -20,7 +20,7 @@ public class UserDatabaseManager {
     private String serverUrl;
 
     public UserDatabaseManager() {
-        // Wczytywanie konfiguracji (bez zmian)
+        // Wczytywanie konfiguracji
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("db.properties")) {
             if (input == null) {
                 System.err.println("Krytyczny błąd: Nie można znaleźć pliku db.properties.");
@@ -109,7 +109,7 @@ public class UserDatabaseManager {
         }
     }
 
-    // --- NOWE, POPRAWNE METODY OBSŁUGI ---
+
 
     public synchronized void zaktualizujEloIZapiszGre(AktywnaGra gra, String gameOverMessage) {
         String[] parts = gameOverMessage.split(":");
@@ -119,12 +119,12 @@ public class UserDatabaseManager {
 
         Integer ktoWygralId = null;
 
-        // ZMIANA: Obsługujemy zarówno mata, jak i poddanie partii
+        // Obsługujemy zarówno mata, jak i poddanie partii
         if (wynikTyp.equals("CHECKMATE") || wynikTyp.equals("RESIGNATION")) {
             String wygranyLogin = parts[2];
             ktoWygralId = getIdUzytkownika(wygranyLogin);
 
-            // Logika zmiany ELO jest taka sama w obu przypadkach
+            // Logika zmiany ELO
             if (ktoWygralId != -1) {
                 if (wygranyLogin.equals(graczBialyLogin)) {
                     zmienElo(graczBialyLogin, 20);
@@ -135,7 +135,7 @@ public class UserDatabaseManager {
                 }
             }
         }
-        // STALEMATE (remis) nie zmienia ELO, więc nie ma tu dla niego bloku `if`
+        // STALEMATE nie zmienia ELO
 
         // Zapisz do historii BEZ ELO
         zapiszGreDoHistorii(getIdUzytkownika(graczBialyLogin), getIdUzytkownika(graczCzarnyLogin), ktoWygralId);
@@ -210,7 +210,7 @@ public class UserDatabaseManager {
         return history;
     }
 
-    // --- ISTNIEJĄCE METODY BEZ ZMIAN ---
+
 
     public String registerUser(String login, String plainPassword) {
         System.out.println("INFO: Próba rejestracji użytkownika: " + login);
@@ -242,7 +242,7 @@ public class UserDatabaseManager {
 
     public Uzytkownik loginUser(String login, String plainPassword) {
         System.out.println("INFO: Próba logowania użytkownika: " + login);
-        // Zmieniamy zapytanie, aby pobierało również datę rejestracji
+
         String sql = "SELECT haslo_hash, data_rejestracji FROM Uzytkownicy WHERE login = ?";
 
         try (Connection conn = getConnectionToDatabase();
@@ -256,7 +256,7 @@ public class UserDatabaseManager {
                 if (storedPassword.equals(plainPassword)) {
                     System.out.println("INFO: Logowanie użytkownika '" + login + "' powiodło się.");
 
-                    // ---> KLUCZOWY FRAGMENT <---
+
                     // Pobieramy datę rejestracji z wyniku zapytania
                     String dataRejestracji = rs.getTimestamp("data_rejestracji").toString();
 
@@ -264,7 +264,7 @@ public class UserDatabaseManager {
                     model.Uzytkownik user = new model.Uzytkownik(login); // Używamy pełnej nazwy, aby uniknąć konfliktów
                     user.setDataRejestracji(dataRejestracji);
                     return user;
-                    // ---> KONIEC KLUCZOWEGO FRAGMENTU <---
+
 
                 } else {
                     System.out.println("WARN: Nieprawidłowe hasło dla użytkownika '" + login + "'.");

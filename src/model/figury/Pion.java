@@ -65,12 +65,8 @@ public class Pion extends Figura {
         return ruchy;
     }
 
-    /**
-     * NOWOŚĆ: Metoda zwracająca tylko te pola, które pion atakuje.
-     * Jest to potrzebne do precyzyjnego sprawdzania szachów.
-     * @param plansza Aktualny stan planszy.
-     * @return Lista pól atakowanych po skosie.
-     */
+    //Metoda zwracająca tylko te pola, które pion atakuje.
+
     public List<Pozycja> getAtakowanePola(Plansza plansza) {
         List<Pozycja> ataki = new ArrayList<>();
         int kierunek = (getKolorFigur() == KolorFigur.WHITE) ? -1 : 1;

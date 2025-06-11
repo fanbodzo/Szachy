@@ -11,7 +11,7 @@ public abstract class Figura {
     protected KolorFigur kolorFigur;
     protected Pozycja pozycja;
     protected TypFigury typFigury;
-    protected boolean czyPierwszyRuch = true; // NOWOŚĆ: Ważne dla piona, roszady
+    protected boolean czyPierwszyRuch = true; // Ważne dla piona, roszady
 
     public Figura(KolorFigur kolorFigur, TypFigury typ) {
         this.kolorFigur = kolorFigur;
@@ -47,7 +47,7 @@ public abstract class Figura {
         return typFigury;
     }
 
-    // NOWOŚĆ: Każda figura musi umieć powiedzieć, gdzie może się ruszyć
+
     public abstract List<Pozycja> getDostepneRuchy(Plansza plansza);
 
     @Override

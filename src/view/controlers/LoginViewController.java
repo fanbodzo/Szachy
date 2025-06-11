@@ -51,10 +51,10 @@ public class LoginViewController implements Initializable, KontrolerNawigator, K
             @Override
             protected Boolean call() throws Exception {
                 try {
-                    // Krok 1: Nawiąż połączenie (jeśli jeszcze nie istnieje)
+                    // Nawiąż połączenie
                     klientSieciowy.connect();
 
-                    // Krok 2: Wyślij żądanie logowania i czekaj na wynik z wątku nasłuchującego
+                    // Wyślij żądanie logowania i czekaj na wynik z wątku nasłuchującego
                     CompletableFuture<Boolean> future = klientSieciowy.login(user, pass);
 
                     // Blokuje ten wątek w tle, aż wątek nasłuchujący wywoła future.complete()

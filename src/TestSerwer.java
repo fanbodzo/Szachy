@@ -109,7 +109,6 @@ public class TestSerwer {
                 if (bialyHandler != null) bialyHandler.sendMessage(gameOverMessage);
                 if (czarnyHandler != null) czarnyHandler.sendMessage(gameOverMessage);
 
-                // ---> KLUCZOWA ZMIANA <---
                 dbManager.zaktualizujEloIZapiszGre(gra, gameOverMessage);
 
                 aktywneGry.remove(gameId);

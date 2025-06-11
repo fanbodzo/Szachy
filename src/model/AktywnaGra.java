@@ -84,12 +84,8 @@ public class AktywnaGra {
         }
     }
 
-    /**
-     * Sprawdza stan gry dla gracza, który ma teraz ruch.
-     * @return String z komunikatem o końcu gry lub null, jeśli gra toczy się dalej.
-     */
+
     public String sprawdzStanGry() {
-        // ===== POPRAWNE WYWOŁANIE =====
         if (plansza.getWszystkieLegalneRuchy(kogoTura).isEmpty()) {
             this.graZakonczona = true;
             if (plansza.czyKrolJestWszachu(kogoTura)) {
@@ -104,6 +100,6 @@ public class AktywnaGra {
                 return "GAME_OVER:STALEMATE";
             }
         }
-        return null; // Gra toczy się dalej
+        return null;
     }
 }

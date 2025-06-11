@@ -107,7 +107,7 @@ public class KlientSieciowy {
 
     private void processServerMessage(String message) {
         System.out.println("[KlientSieciowy-Listener] Przetwarzam: " + message);
-        // --- ZMIANA TUTAJ ---
+
         // Dzielimy na 2 części: komendę i resztę wiadomości.
         String[] parts = message.split(":", 2);
         String command = parts[0];
@@ -129,7 +129,7 @@ public class KlientSieciowy {
                 if (loginFuture != null) loginFuture.complete(false);
                 break;
 
-            // --- NAJWAŻNIEJSZA ZMIANA JEST TUTAJ ---
+
             case "REGISTER_RESULT":
                 if (registrationFuture != null) {
                     // parts[1] będzie zawierać "SUCCESS" lub komunikat błędu od serwera

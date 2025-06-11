@@ -24,15 +24,13 @@ public class Plansza {
         this.pola = new Figura[ROZMIAR_PLANSZY][ROZMIAR_PLANSZY];
         for (int r = 0; r < ROZMIAR_PLANSZY; r++) {
             for (int k = 0; k < ROZMIAR_PLANSZY; k++) {
-                if (inna.pola[r][k] != null) {
-                    this.pola[r][k] = FabrykaFigur.utworzFigure(inna.pola[r][k].getTypFigury(), inna.pola[r][k].getKolorFigur());
+                Figura figuraDoSkopiowania = inna.pola[r][k];
+                if (figuraDoSkopiowania != null) {
+                    this.pola[r][k] = FabrykaFigur.utworzFigure(figuraDoSkopiowania.getTypFigury(), figuraDoSkopiowania.getKolorFigur());
                     this.pola[r][k].setPozycja(new Pozycja(r, k));
-                    this.pola[r][k].setCzyPierwszyRuch(inna.pola[r][k].isCzyPierwszyRuch());
+                    this.pola[r][k].setCzyPierwszyRuch(figuraDoSkopiowania.isCzyPierwszyRuch());
                 }
             }
-        }
-        if (inna.enPassantTargetSquare != null) {
-            this.enPassantTargetSquare = new Pozycja(inna.enPassantTargetSquare.getRzad(), inna.enPassantTargetSquare.getKolumna());
         }
     }
 
@@ -66,14 +64,57 @@ public class Plansza {
         Figura figura = getFigura(start);
         if (figura == null) return;
 
-        enPassantTargetSquare = null;
-        if (figura.getTypFigury() == TypFigury.PION && Math.abs(start.getRzad() - koniec.getRzad()) == 2) {
-            enPassantTargetSquare = new Pozycja((start.getRzad() + koniec.getRzad()) / 2, start.getKolumna());
+        // Sprawdzamy, czy ruch jest roszadą (Król przesuwa się o 2 pola w poziomie)
+        if (figura instanceof Krol && Math.abs(start.getKolumna() - koniec.getKolumna()) == 2) {
+            int rzad = start.getRzad();
+            Pozycja startWiezy, koniecWiezy;
+
+            // Roszada krótka (w prawo)
+            if (koniec.getKolumna() > start.getKolumna()) {
+                startWiezy = new Pozycja(rzad, 7); // Wieża z pola h1/h8
+                koniecWiezy = new Pozycja(rzad, 5); // Przesuwa się na f1/f8
+            }
+            // Roszada długa (w lewo)
+            else {
+                startWiezy = new Pozycja(rzad, 0); // Wieża z pola a1/a8
+                koniecWiezy = new Pozycja(rzad, 3); // Przesuwa się na d1/d8
+            }
+            // Przesuwamy wieżę
+            Figura wieza = getFigura(startWiezy);
+            if (wieza != null) {
+                setFigura(koniecWiezy, wieza);
+                setFigura(startWiezy, null);
+                wieza.setCzyPierwszyRuch(false);
+            }
         }
+
+        Pozycja oldEnPassantTarget = this.enPassantTargetSquare;
+
+
+        this.enPassantTargetSquare = null;
+        if (figura instanceof Pion && Math.abs(start.getRzad() - koniec.getRzad()) == 2) {
+            this.enPassantTargetSquare = new Pozycja((start.getRzad() + koniec.getRzad()) / 2, start.getKolumna());
+        }
+
 
         figura.setCzyPierwszyRuch(false);
         setFigura(koniec, figura);
         setFigura(start, null);
+
+
+        if (figura instanceof Pion && koniec.equals(oldEnPassantTarget)) {
+
+            int rzadBitegoPionka;
+            if (figura.getKolorFigur() == KolorFigur.WHITE) {
+
+                rzadBitegoPionka = koniec.getRzad() + 1;
+            } else {
+                rzadBitegoPionka = koniec.getRzad() - 1;
+            }
+            Pozycja pozycjaBitegoPionka = new Pozycja(rzadBitegoPionka, koniec.getKolumna());
+            setFigura(pozycjaBitegoPionka, null);
+            System.out.println("INFO: Wykonano bicie w przelocie, usunięto piona z " + pozycjaBitegoPionka);
+        }
     }
 
     public List<Pozycja> getWszystkieLegalneRuchyDlaFigury(Pozycja start) {
@@ -240,6 +281,24 @@ public class Plansza {
                         Figura nowaFigura = FabrykaFigur.utworzFigure(typ, kolor);
                         nowaFigura.setPozycja(new Pozycja(r, k));
                         this.pola[r][k] = nowaFigura;
+
+
+                        if (nowaFigura.getTypFigury() == TypFigury.PION) {
+                            int startowyRzadPionka = (nowaFigura.getKolorFigur() == KolorFigur.WHITE) ? 6 : 1;
+                            if (nowaFigura.getPozycja().getRzad() != startowyRzadPionka) {
+                                nowaFigura.setCzyPierwszyRuch(false);
+                            }
+                        }
+                        else if (nowaFigura.getTypFigury() == TypFigury.KROL || nowaFigura.getTypFigury() == TypFigury.WIEZA) {
+                            int startowyRzadFigury = (nowaFigura.getKolorFigur() == KolorFigur.WHITE) ? 7 : 0;
+                            if (nowaFigura.getPozycja().getRzad() != startowyRzadFigury) {
+                                nowaFigura.setCzyPierwszyRuch(false);
+                            }
+
+                            if(nowaFigura.getTypFigury() == TypFigury.KROL && nowaFigura.getPozycja().getKolumna() != 4){
+                                nowaFigura.setCzyPierwszyRuch(false);
+                            }
+                        }
                     }
                 }
                 index += 2;
@@ -247,12 +306,8 @@ public class Plansza {
         }
     }
 
-    /**
-     * Zwraca listę wszystkich w pełni legalnych ruchów dla danego koloru.
-     * Iteruje po wszystkich figurach danego koloru i zbiera ich legalne ruchy.
-     * @param kolor Kolor gracza, dla którego sprawdzane są ruchy.
-     * @return Lista legalnych ruchów (tablica dwuelementowa: [start, koniec]).
-     */
+    //Zwraca listę wszystkich w pełni legalnych ruchów dla danego koloru.
+
     public List<Pozycja[]> getWszystkieLegalneRuchy(KolorFigur kolor) {
         List<Pozycja[]> wszystkieLegalneRuchy = new ArrayList<>();
         for (int r = 0; r < ROZMIAR_PLANSZY; r++) {

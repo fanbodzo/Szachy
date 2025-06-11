@@ -49,14 +49,9 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
     private final StackPane[][] polaSzachownicy = new StackPane[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
     private final Region[][] ramkiPodswietlenia = new Region[Plansza.ROZMIAR_PLANSZY][Plansza.ROZMIAR_PLANSZY];
 
-    // --- NOWOŚĆ: Metody do transformacji współrzędnych ---
+    //  Metody do transformacji współrzędnych ---
 
-    /**
-     * Konwertuje współrzędne logiczne planszy (zawsze z perspektywy białych)
-     * na współrzędne wyświetlane na ekranie (GridPane).
-     * @param logicalPos Pozycja logiczna figury.
-     * @return Rząd do użycia w GridPane.
-     */
+
     private int getDisplayRow(Pozycja logicalPos) {
         if (mojKolor == KolorFigur.BLACK) {
             return 7 - logicalPos.getRzad();
@@ -64,11 +59,8 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         return logicalPos.getRzad();
     }
 
-    /**
-     * Konwertuje współrzędne logiczne planszy na kolumnę wyświetlaną na ekranie.
-     * @param logicalPos Pozycja logiczna figury.
-     * @return Kolumna do użycia w GridPane.
-     */
+    // Konwertuje współrzędne logiczne planszy na kolumnę wyświetlaną na ekranie.
+
     private int getDisplayCol(Pozycja logicalPos) {
         if (mojKolor == KolorFigur.BLACK) {
             return 7 - logicalPos.getKolumna();
@@ -76,13 +68,8 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         return logicalPos.getKolumna();
     }
 
-    /**
-     * Konwertuje współrzędne kliknięte na ekranie (w GridPane) na
-     * współrzędne logiczne, które rozumie model gry i serwer.
-     * @param displayRow Kliknięty rząd na ekranie.
-     * @param displayCol Kliknięta kolumna na ekranie.
-     * @return Pozycja logiczna.
-     */
+    //Konwertuje współrzędne kliknięte na ekranie (w GridPane) na
+
     private Pozycja getLogicalPosition(int displayRow, int displayCol) {
         if (mojKolor == KolorFigur.BLACK) {
             return new Pozycja(7 - displayRow, 7 - displayCol);
@@ -172,7 +159,7 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         }
     }
 
-    // ZMIANA: parametr to teraz pozycja LOGICZNA
+    // parametr to pozycja LOGICZNA
     private void kliknieciePola(Pozycja kliknietaPozycjaLogiczna) {
         if (graZakonczona) {
             System.out.println("[GraViewController] Kliknięcie zignorowane: gra zakończona.");
@@ -259,10 +246,11 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         odswiezCalaPlansze();
     }
 
-    // ZMIANA: Ta metoda teraz rysuje planszę z uwzględnieniem orientacji
+    //  Ta metoda rysuje planszę z uwzględnieniem orientacji
     private void odswiezCalaPlansze() {
         if (plansza == null) return;
-        // Pętle iterują po współrzędnych WYŚWIETLANYCH (display)
+
+        //Wyczyść planszę i narysuj wszystkie figury (istniejąca logika)
         for (int r_display = 0; r_display < Plansza.ROZMIAR_PLANSZY; r_display++) {
             for (int k_display = 0; k_display < Plansza.ROZMIAR_PLANSZY; k_display++) {
                 StackPane poleGUI = polaSzachownicy[r_display][k_display];
@@ -274,7 +262,6 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
                 Color currentcolor = ((r_display + k_display) % 2 == 0) ? Color.web("#F0D9B5") : Color.web("#B58863");
                 poleGUI.setStyle("-fx-background-color: " + KolorToCSS.toWebColor(currentcolor) + ";");
 
-                // Pobierz pozycję logiczną dla danego pola wyświetlanego
                 Pozycja logicalPos = getLogicalPosition(r_display, k_display);
                 Figura f = plansza.getFigura(logicalPos);
 
@@ -283,9 +270,27 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
                 }
             }
         }
+
+        //
+        //czy biały król jest w szachu
+        if (plansza.czyKrolJestWszachu(KolorFigur.WHITE)) {
+            Pozycja pozycjaKrolaBialego = plansza.znajdzKrola(KolorFigur.WHITE);
+            if (pozycjaKrolaBialego != null) {
+                // podświetlenia pola na czerwono
+                podswietlPole(pozycjaKrolaBialego, Color.CRIMSON, "solid");
+            }
+        }
+
+        //Sprawdź, czy czarny król jest w szachu
+        if (plansza.czyKrolJestWszachu(KolorFigur.BLACK)) {
+            Pozycja pozycjaKrolaCzarnego = plansza.znajdzKrola(KolorFigur.BLACK);
+            if (pozycjaKrolaCzarnego != null) {
+                podswietlPole(pozycjaKrolaCzarnego, Color.CRIMSON, "solid");
+            }
+        }
     }
 
-    // ZMIANA: Logika kliknięcia musi transformować współrzędne
+    // Logika kliknięcia transformujr współrzędne
     private void utworzSzachowniceGUI() {
         szachownica.getChildren().clear();
         for (int i = 0; i < Plansza.ROZMIAR_PLANSZY; i++) {
@@ -323,7 +328,7 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         }
     }
 
-    // ZMIANA: Metoda używa współrzędnych wyświetlanych
+    //Metoda używa współrzędnych wyświetlanych
     private void usunRamke(int r_display, int k_display) {
         if (ramkiPodswietlenia[r_display][k_display] != null) {
             polaSzachownicy[r_display][k_display].getChildren().remove(ramkiPodswietlenia[r_display][k_display]);
@@ -331,7 +336,7 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         }
     }
 
-    // ZMIANA: Metoda przyjmuje pozycję LOGICZNĄ, a rysuje na WYŚWIETLANEJ
+    // Metoda przyjmuje pozycję LOGICZNĄ, a rysuje na WYŚWIETLANEJ
     private void podswietlPole(Pozycja p_logical, Color kolorRamki, String stylRamki) {
         if (p_logical != null && plansza.isValidPosition(p_logical)) {
             // Konwertuj pozycję logiczną na wyświetlaną
@@ -349,7 +354,7 @@ public class GraViewController implements Initializable, KontrolerNawigator, Kon
         }
     }
 
-    // ZMIANA: Metoda przyjmuje pozycję LOGICZNĄ
+    // Metoda przyjmuje pozycję LOGICZNĄ
     private void podswietlDostepnyRuch(Pozycja p_logical) {
         if (p_logical != null && plansza.isValidPosition(p_logical)) {
             // Konwertuj pozycję logiczną na wyświetlaną, aby znaleźć odpowiedni StackPane

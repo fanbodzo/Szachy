@@ -55,7 +55,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleRequest(String request) {
-        // Zwiększamy limit części do 5, aby obsłużyć komendę MOVE
+
         String[] parts = request.split(":", 5);
         String command = parts[0].toUpperCase();
 

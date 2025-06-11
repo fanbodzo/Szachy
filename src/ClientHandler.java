@@ -31,6 +31,7 @@ public class ClientHandler implements Runnable {
             this.out = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
+
             sendMessage("HELLO");
 
             String request;

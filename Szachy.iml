@@ -207,16 +207,16 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="mysql-connector-j-8.4" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$PATH_TO_SQL$!/" />
+          <root url="jar://$MODULE_DIR$/../mysql-connector-j-8.4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="lib1" level="project" />
-    <orderEntry type="library" name="mysql-connector-j-8.5" level="project" />
   </component>
 </module>

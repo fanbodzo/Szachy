@@ -28,7 +28,7 @@ public class TestSerwer {
 
     public void removeClient(String login) {
         activeClients.remove(login);
-        // TODO: Obsłużyć sytuację, gdy gracz w trakcie gry się rozłącza
+
     }
 
     public void broadcastMessage(String message) {

@@ -72,7 +72,7 @@ public class LoginViewController implements Initializable, KontrolerNawigator, K
             if (isLoggedIn) {
                 nawigator.nawigujDo(ViewManager.STRONA_GLOWNA);
             } else {
-                errorLabel.setText(loginTask.getMessage() != null ? loginTask.getMessage() : "Błędny login lub hasło.");
+                errorLabel.setText(klientSieciowy.getLastLoginError());
                 setUIState(false); // Odblokuj UI
                 //klientSieciowy.disconnect(); // Rozłącz, aby następna próba była czysta
             }
@@ -85,8 +85,18 @@ public class LoginViewController implements Initializable, KontrolerNawigator, K
         loginButton.setDisable(loggingIn);
         username.setDisable(loggingIn);
         password.setDisable(loggingIn);
+        registerLink.setDisable(loggingIn); // Dodatkowo blokujemy link do rejestracji
+
         if (loggingIn) {
             errorLabel.setText("Logowanie...");
+        } else {
+            // Jeśli przestajemy się logować, a na etykiecie wciąż jest
+            // tekst "Logowanie...", czyścimy go, aby zrobić miejsce
+            // na właściwy komunikat o błędzie.
+            if (errorLabel.getText().equals("Logowanie...")) {
+                errorLabel.setText("");
+            }
         }
     }
+
 }

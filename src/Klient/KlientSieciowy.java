@@ -31,7 +31,8 @@ public class KlientSieciowy {
     private Consumer<String> boardUpdateCallback;
     private Consumer<String> gameOverCallback;
     private Consumer<List<String>> historyUpdateCallback;
-    private Consumer<List<String>> leaderboardUpdateCallback; // Nowy callback
+    private Consumer<List<String>> leaderboardUpdateCallback;
+    private String lastLoginError = "Błędny login lub hasło.";// Nowy callback
 
     public void connect() throws IOException {
         if (socket != null && !socket.isClosed()) return;
@@ -103,6 +104,9 @@ public class KlientSieciowy {
         listenerThread.start();
         System.out.println("[KlientSieciowy] Wątek nasłuchujący uruchomiony.");
     }
+    public String getLastLoginError() {
+        return lastLoginError;
+    }
 
 
     private void processServerMessage(String message) {
@@ -126,6 +130,8 @@ public class KlientSieciowy {
             case "LOGIN_FAILURE":
                 this.currentUser = null;
                 this.pendingLoginUsername = null;
+                // Ustawiamy konkretny komunikat błędu, który będzie można odczytać
+                this.lastLoginError = "Błędny login lub hasło.";
                 if (loginFuture != null) loginFuture.complete(false);
                 break;
 
